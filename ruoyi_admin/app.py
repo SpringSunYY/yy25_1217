@@ -29,9 +29,9 @@ def create_app():
     init_app(app)
     # 注册测试模块
     try:
-        from ruoyi_test import init_app as test_init_app
-        test_init_app(app)
-        print("Test module registered successfully")
+        from ruoyi_movie import init_app as movie_init_app
+        movie_init_app(app)
+        print("movie module registered successfully")
     except ImportError:
         print("测试模块未找到或未正确配置")
 
