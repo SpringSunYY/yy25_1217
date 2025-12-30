@@ -1,29 +1,34 @@
 # -*- coding: utf-8 -*-
 # @Author  : YY
 
-from io import BufferedReader, BytesIO
-import io
+import base64
+import ipaddress
 import json
-import os,socket,threading,re,base64,ipaddress,math,psutil
-from zipfile import is_zipfile
+import math
+import os
+import psutil
+import re
+import socket
+import threading
 import time
+from datetime import datetime
+from io import BytesIO
+from logging import Logger
 from typing import Any, Callable, Dict, List, Literal, Optional, Type, \
     get_args, get_origin
-from datetime import datetime
-from openpyxl import Workbook, load_workbook
-from openpyxl.worksheet.worksheet import Worksheet
-from openpyxl.styles import PatternFill
-from pydantic import BaseModel
-from werkzeug.exceptions import NotFound
-from werkzeug.datastructures import FileStorage
-from werkzeug.utils import secure_filename
+
 from flask import Response, request
 from jwt import api_jwt
-from logging import Logger
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import PatternFill
+from openpyxl.worksheet.worksheet import Worksheet
+from pydantic import BaseModel
+from pydantic.alias_generators import to_camel
+from werkzeug.datastructures import FileStorage
+from werkzeug.exceptions import NotFound
+from werkzeug.utils import secure_filename
 
 from ruoyi_common.base.snippet import classproperty
-from pydantic.alias_generators import to_camel
-
 from ..constant import Constants
 
 
@@ -811,7 +816,7 @@ class FileUploadUtil:
     def check_allowed(cls, file:FileStorage, allowed_extensions:List[str]):
         '''
         文件大小、类型校验（对标若依的 FileUploadUtils.assertAllowed）
-       
+
         Args:
             file(FileStorage): 文件对象
             allowed_extensions(List[str]): 允许的扩展名列表
@@ -852,10 +857,10 @@ class FileUploadUtil:
         '''
         提取文件名，仿照若依：
         日期路径/原文件名_序列号.扩展名
-        
+
         Args:
             file(FileStorage): 文件对象
-        
+
         Returns:
             str: 文件名
         '''
@@ -1395,7 +1400,7 @@ class ExcelUtil:
         meta = column_meta.get(header)
         if not meta:
             return value
-        
+
         access = meta.get("access")
         # 如果设置了字典类型，将标签转换为字典值（导入时将标签转换为值）
         if access and access.dict_type and value not in (None, ""):
@@ -1407,7 +1412,7 @@ class ExcelUtil:
             except Exception:
                 # 如果字典转换失败，使用原值
                 pass
-        
+
         target_type = meta.get("target_type")
         if target_type is None:
             target_type = self._resolve_field_type(meta["path"])
