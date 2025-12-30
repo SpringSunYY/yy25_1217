@@ -167,8 +167,11 @@
     <el-table :loading="loading" :data="movieList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center"/>
       <el-table-column label="编号" :show-overflow-tooltip="true" v-if="columns[0].visible" prop="id"/>
-      <el-table-column label="电影ID" align="center" :show-overflow-tooltip="true" v-if="columns[1].visible"
-                       prop="movieId"/>
+      <el-table-column label="封面" align="center" v-if="columns[1].visible" prop="coverUrl" width="100">
+        <template slot-scope="scope">
+          <image-preview :src="scope.row.coverUrl" :width="50" :height="50"/>
+        </template>
+      </el-table-column>
       <el-table-column label="名称" align="center" :show-overflow-tooltip="true" v-if="columns[2].visible"
                        prop="title"/>
       <el-table-column label="评分" align="center" :show-overflow-tooltip="true" v-if="columns[3].visible"
@@ -195,21 +198,25 @@
                        prop="durationMinute"/>
       <el-table-column label="上映日期" align="center" :show-overflow-tooltip="true" v-if="columns[14].visible"
                        prop="pubDate"/>
-      <el-table-column label="上映时间" align="center" :show-overflow-tooltip="true" v-if="columns[15].visible"
-                       prop="publishDate"/>
+      <el-table-column label="上映时间" align="center" v-if="columns[15].visible" prop="publishDate" width="180">
+        <template slot-scope="scope">
+          <span>{{ parseTime(scope.row.publishDate, '{y}-{m}-{d}') }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="上映年份" align="center" :show-overflow-tooltip="true" v-if="columns[16].visible"
                        prop="publishYear"/>
       <el-table-column label="类型" align="center" :show-overflow-tooltip="true" v-if="columns[17].visible"
                        prop="genres"/>
       <el-table-column label="剧情简介" align="center" :show-overflow-tooltip="true" v-if="columns[18].visible"
                        prop="summary"/>
-      <el-table-column label="封面" align="center" v-if="columns[19].visible" prop="coverUrl" width="100">
+      <el-table-column label="电影ID" align="center" :show-overflow-tooltip="true" v-if="columns[19].visible"
+                       prop="movieId"/>
+      <el-table-column label="详情页" align="center" :show-overflow-tooltip="true" v-if="columns[20].visible"
+                       prop="detailUrl">
         <template slot-scope="scope">
-          <image-preview :src="scope.row.coverUrl" :width="50" :height="50"/>
+          <a :href="scope.row.detailUrl" target="_blank">查看</a>
         </template>
       </el-table-column>
-      <el-table-column label="详情页" align="center" :show-overflow-tooltip="true" v-if="columns[20].visible"
-                       prop="detailUrl"/>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button
@@ -240,9 +247,12 @@
       @pagination="getList"
     />
 
-    <!-- 添加或修改电影信息表对话框 -->
+    <!-- 添加或修改电影信息对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+        <el-form-item label="电影ID" prop="movieId">
+          <el-input v-model="form.movieId" placeholder="请输入电影ID"/>
+        </el-form-item>
         <el-form-item label="名称" prop="title">
           <el-input v-model="form.title" placeholder="请输入名称"/>
         </el-form-item>
@@ -283,7 +293,12 @@
           <el-input v-model="form.pubDate" placeholder="请输入上映日期"/>
         </el-form-item>
         <el-form-item label="上映时间" prop="publishDate">
-          <el-input v-model="form.publishDate" placeholder="请输入上映时间"/>
+          <el-date-picker clearable
+                          v-model="form.publishDate"
+                          type="date"
+                          value-format="yyyy-MM-dd"
+                          placeholder="选择上映时间">
+          </el-date-picker>
         </el-form-item>
         <el-form-item label="上映年份" prop="publishYear">
           <el-input v-model="form.publishYear" placeholder="请输入上映年份"/>
@@ -326,7 +341,7 @@
         <div class="el-upload__tip text-center" slot="tip">
           <div class="el-upload__tip" slot="tip">
             <el-checkbox v-model="upload.updateSupport"/>
-            是否更新已经存在的电影信息表数据
+            是否更新已经存在的电影信息数据
           </div>
           <span>仅允许导入xls、xlsx格式文件。</span>
           <el-link type="primary" :underline="false" style="font-size:12px;vertical-align: baseline;"
@@ -364,12 +379,12 @@ export default {
       showSearch: true,
       // 总条数
       total: 0,
-      // 电影信息表表格数据
+      // 电影信息表格数据
       movieList: [],
       // 表格列信息
       columns: [
-        {key: 0, label: '编号', visible: true},
-        {key: 1, label: '电影ID', visible: true},
+        {key: 0, label: '编号', visible: false},
+        {key: 1, label: '封面', visible: true},
         {key: 2, label: '名称', visible: true},
         {key: 3, label: '评分', visible: true},
         {key: 4, label: '看过人数', visible: true},
@@ -387,7 +402,7 @@ export default {
         {key: 16, label: '上映年份', visible: true},
         {key: 17, label: '类型', visible: true},
         {key: 18, label: '剧情简介', visible: true},
-        {key: 19, label: '封面', visible: true},
+        {key: 19, label: '电影ID', visible: true},
         {key: 20, label: '详情页', visible: true}
       ],
       // 弹出层标题
@@ -421,7 +436,7 @@ export default {
         title: "",
         // 是否禁用上传
         isUploading: false,
-        // 是否更新已经存在的电影信息表数据
+        // 是否更新已经存在的电影信息数据
         updateSupport: 0,
         // 设置上传的请求头部
         headers: {Authorization: "Bearer " + getToken()},
@@ -446,7 +461,7 @@ export default {
     this.getList();
   },
   methods: {
-    /** 查询电影信息表列表 */
+    /** 查询电影信息列表 */
     getList() {
       this.loading = true;
       listMovie(this.queryParams).then(response => {
@@ -507,7 +522,7 @@ export default {
     handleAdd() {
       this.reset();
       this.open = true;
-      this.title = "添加电影信息表";
+      this.title = "添加电影信息";
     },
     /** 修改按钮操作 */
     handleUpdate(row) {
@@ -516,7 +531,7 @@ export default {
       getMovie(id).then(response => {
         this.form = response.data;
         this.open = true;
-        this.title = "修改电影信息表";
+        this.title = "修改电影信息";
       });
     },
     /** 提交按钮 */
@@ -544,7 +559,7 @@ export default {
     handleDelete(row) {
       const movieIds = row.id || this.ids;
       console.log(movieIds)
-      this.$modal.confirm('是否确认删除电影信息表编号为"' + movieIds + '"的数据项？').then(function () {
+      this.$modal.confirm('是否确认删除电影信息编号为"' + movieIds + '"的数据项？').then(function () {
         return delMovie(movieIds);
       }).then(() => {
         this.getList();
@@ -560,7 +575,7 @@ export default {
     },
     /** 导入按钮操作 */
     handleImport() {
-      this.upload.title = "电影信息表导入";
+      this.upload.title = "电影信息导入";
       this.upload.open = true;
     },
     /** 下载模板操作 */
