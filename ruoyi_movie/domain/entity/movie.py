@@ -22,7 +22,7 @@ class Movie(BaseEntity):
         BeforeValidator(str_to_int),
         Field(default=None, description="编号"),
         VoField(query=True),
-        ExcelField(name="编号")
+        ExcelField(name="编号", action="export")
     ]
     # 电影ID
     movie_id: Annotated[
@@ -79,7 +79,7 @@ class Movie(BaseEntity):
         Optional[str],
         Field(default=None, description="国家地区"),
         VoField(query=True),
-        ExcelField(name="国家地区")
+        ExcelField(name="国家/地区")
     ]
     # 导演
     directors: Annotated[
@@ -113,7 +113,7 @@ class Movie(BaseEntity):
         Optional[int],
         BeforeValidator(str_to_int),
         Field(default=None, description="片长（分钟）"),
-        ExcelField(name="片长（分钟）")
+        ExcelField(name="片长（分钟）", action="export")
     ]
     # 上映日期
     pub_date: Annotated[
@@ -127,7 +127,7 @@ class Movie(BaseEntity):
         BeforeValidator(to_datetime()),
         Field(default=None, description="上映时间"),
         VoField(query=True),
-        ExcelField(name="上映时间")
+        ExcelField(name="上映时间", action="export")
     ]
     # 上映年份
     publish_year: Annotated[
@@ -135,7 +135,7 @@ class Movie(BaseEntity):
         BeforeValidator(str_to_int),
         Field(default=None, description="上映年份"),
         VoField(query=True),
-        ExcelField(name="上映年份")
+        ExcelField(name="上映年份", action="export")
     ]
     # 类型
     genres: Annotated[

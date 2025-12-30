@@ -71,7 +71,7 @@ class SysUser(AuditEntity):
         BeforeValidator(str_to_int),
         Field(gt=0, default=None),
         VoField(query=True),
-        ExcelField(name="用户序号", cell_type="numeric", prompt="用户编号")
+        ExcelField(name="用户序号", cell_type="numeric", prompt="用户编号", is_statistics=False)
     ]
 
     dept_id: Annotated[

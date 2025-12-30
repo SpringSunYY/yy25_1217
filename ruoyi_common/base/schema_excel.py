@@ -17,7 +17,6 @@ def ExcelField(
     prompt:str='',
     combo:List=[],
     date_format:str='',
-    is_export:bool=True,
     is_statistics:bool=False,
     background_color:str='FFFFFFFF',
     color:str='FF000000',
@@ -31,11 +30,10 @@ def ExcelField(
         width=width,
         height=height,
         default=default,
-        converter=converter,     
+        converter=converter,
         prompt=prompt,
         date_format=date_format,
         combo=combo,
-        is_export=is_export,
         is_statistics=is_statistics,
         background_color=background_color,
         color=color,
@@ -96,10 +94,7 @@ class ExcelAccess:
     
     # 另一个类中的属性名称,支持多级获取,以小数点隔开
     attr: str = ''
-    
-    # 是否导出数据,应对需求:有时我们需要导出一份模板,这是标题需要但内容需要用户手工填写.
-    is_export: bool = True
-    
+
     # 是否自动统计数据,在最后追加一行统计数据总和
     is_statistics : bool = False
     

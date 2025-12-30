@@ -1093,16 +1093,17 @@ class ExcelUtil:
 
         return output
 
-    def render_header(self, sheet:Worksheet,fill:PatternFill=None):
+    def render_header(self, sheet:Worksheet,fill:PatternFill=None, for_import:bool=False):
         """
         渲染Excel表头
 
         Args:
             sheet (Worksheet): 工作表
             fill(PatternFill): 表头填充
+            for_import(bool): 是否用于导入模板
         """
         for col_index,access in enumerate(
-                self.model.generate_excel_schema(),
+                self.model.generate_excel_schema(for_import=for_import),
                 start=1
         ):
             _, access = access
@@ -1227,7 +1228,7 @@ class ExcelUtil:
         header_fill = PatternFill(
             **self.default_header_fill
         )
-        self.render_header(sheet,header_fill)
+        self.render_header(sheet,header_fill, for_import=True)
 
     def import_file(self, file:FileStorage, sheetname:Optional[str]=None) -> List[BaseModel]:
         """

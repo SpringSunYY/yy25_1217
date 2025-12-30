@@ -207,9 +207,12 @@ class BaseEntity(BaseModel):
     
     
     @classmethod
-    def generate_excel_schema(cls) -> Generator[Tuple[str,ExcelAccess],None,None]:
+    def generate_excel_schema(cls, for_import:bool=False) -> Generator[Tuple[str,ExcelAccess],None,None]:
         '''
         生成excel的schema
+
+        Args:
+            for_import(bool): 是否用于导入模板，如果是则只包含action为'import'或'both'的字段
         '''
         for k,info in cls.model_fields.items():
             if info.json_schema_extra is None:continue
@@ -217,8 +220,16 @@ class BaseEntity(BaseModel):
             if excel_access:
                 if isinstance(excel_access,(list,tuple,)):
                     for access in excel_access:
+                        # 导入模板：只显示 action 为 'import' 或 'both' 的字段
+                        # 导出时：显示所有字段
+                        if for_import and access.action not in ['import', 'both']:
+                            continue
                         yield "{}.{}".format(k,access.attr),access
                 else:
+                    # 导入模板：只显示 action 为 'import' 或 'both' 的字段
+                    # 导出时：显示所有字段
+                    if for_import and excel_access.action not in ['import', 'both']:
+                        continue
                     yield k,excel_access
     
     @classmethod
@@ -241,7 +252,7 @@ class BaseEntity(BaseModel):
         生成excel数据
         '''
         data = self.model_dump()
-        for k,access in self.generate_excel_schema():
+        for k,access in self.generate_excel_schema(for_import=False):
             if "." in k:
                 k1,k2 = k.split(".")
                 sub_data = data.get(k1,{})
