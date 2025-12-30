@@ -43,17 +43,27 @@ class MovieService:
                     # 跳过未知数据
                     continue
 
-                # 处理上映日期，提取第一个日期
-                if movie.pub_date:
-                    first_date, publish_year = MovieService._parse_pub_date(movie.pub_date)
-                    if first_date:
-                        movie.pub_date = first_date
+                # 处理上映日期，提取第一个日期用于设置publish_date和publish_year
+                # 注意：保持原有的pub_date字段不变
+                # 必须要有有效的上映时间，否则跳过该数据
+                if not movie.pub_date:
+                    LogUtil.logger.warning(f"上映日期为空，跳过该条数据")
+                    continue
+
+                first_date, publish_year = MovieService._parse_pub_date(movie.pub_date)
+                if first_date and publish_year:
+                    # 设置上映时间（datetime类型）
+                    try:
+                        movie.publish_date = datetime.strptime(first_date, '%Y-%m-%d')
                         movie.publish_year = publish_year
-                        # 同时设置publish_date（datetime类型）
-                        try:
-                            movie.publish_date = datetime.strptime(first_date, '%Y-%m-%d')
-                        except ValueError:
-                            LogUtil.logger.warning(f"无法解析日期格式: {first_date}")
+                    except ValueError:
+                        # 如果无法解析为datetime格式，跳过该数据
+                        LogUtil.logger.warning(f"无法解析日期格式: {first_date}，跳过该条数据")
+                        continue
+                else:
+                    # 如果无法提取有效的日期，跳过该数据
+                    LogUtil.logger.warning(f"无法从上映日期中提取有效日期: {movie.pub_date}，跳过该条数据")
+                    continue
 
                 processed_list.append(movie)
 
