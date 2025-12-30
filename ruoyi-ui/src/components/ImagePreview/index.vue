@@ -1,9 +1,10 @@
 <template>
   <el-image
-    :src="`${realSrc}`"
+    :src="`${currentSrc}`"
     fit="cover"
     :style="`width:${realWidth};height:${realHeight};`"
-    :preview-src-list="realSrcList"
+    :preview-src-list="currentSrcList"
+    @error="handleImageError"
   >
     <div slot="error" class="image-slot">
       <i class="el-icon-picture-outline"></i>
@@ -30,10 +31,19 @@ export default {
       default: ""
     }
   },
+  data() {
+    return {
+      useProxyForExternal: false // 标记是否对外部图片使用代理
+    };
+  },
   computed: {
     realSrc() {
       let real_src = this.src.split(",")[0];
       if (isExternal(real_src)) {
+        if (this.useProxyForExternal) {
+          // 对外部图片使用代理，避免403错误
+          return process.env.VUE_APP_BASE_API + "/common/proxy-image?url=" + encodeURIComponent(real_src);
+        }
         return real_src;
       }
       return process.env.VUE_APP_BASE_API + real_src;
@@ -43,6 +53,33 @@ export default {
       let srcList = [];
       real_src_list.forEach(item => {
         if (isExternal(item)) {
+          if (this.useProxyForExternal) {
+            return srcList.push(process.env.VUE_APP_BASE_API + "/common/proxy-image?url=" + encodeURIComponent(item));
+          }
+          return srcList.push(item);
+        }
+        return srcList.push(process.env.VUE_APP_BASE_API + item);
+      });
+      return srcList;
+    },
+    currentSrc() {
+      let real_src = this.src.split(",")[0];
+      if (isExternal(real_src)) {
+        if (this.useProxyForExternal) {
+          return process.env.VUE_APP_BASE_API + "/common/proxy-image?url=" + encodeURIComponent(real_src);
+        }
+        return real_src;
+      }
+      return process.env.VUE_APP_BASE_API + real_src;
+    },
+    currentSrcList() {
+      let real_src_list = this.src.split(",");
+      let srcList = [];
+      real_src_list.forEach(item => {
+        if (isExternal(item)) {
+          if (this.useProxyForExternal) {
+            return srcList.push(process.env.VUE_APP_BASE_API + "/common/proxy-image?url=" + encodeURIComponent(item));
+          }
           return srcList.push(item);
         }
         return srcList.push(process.env.VUE_APP_BASE_API + item);
@@ -56,6 +93,14 @@ export default {
       return typeof this.height == "string" ? this.height : `${this.height}px`;
     }
   },
+  methods: {
+    handleImageError() {
+      // 当外部图片加载失败时，切换到代理模式
+      if (!this.useProxyForExternal && isExternal(this.src.split(",")[0])) {
+        this.useProxyForExternal = true;
+      }
+    }
+  }
 };
 </script>
 

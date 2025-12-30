@@ -543,6 +543,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const movieIds = row.id || this.ids;
+      console.log(movieIds)
       this.$modal.confirm('是否确认删除电影信息表编号为"' + movieIds + '"的数据项？').then(function () {
         return delMovie(movieIds);
       }).then(() => {

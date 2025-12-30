@@ -3,7 +3,8 @@
 
 import os
 import time
-from flask import request, send_from_directory
+import requests
+from flask import request, send_from_directory, Response
 from pydantic import Field
 from typing_extensions import Annotated
 from werkzeug.datastructures import FileStorage
@@ -107,6 +108,52 @@ def common_download_resource(
     except Exception as e:
         return AjaxResponse.from_error("下载失败")
     return response
+
+
+@reg.api.route('/common/proxy-image')
+@QueryValidator()
+def common_proxy_image(
+        url: Annotated[str, Field(min_length=1, max_length=1000)]
+):
+    """
+    代理外部图片请求，解决前端直接访问外部图片时可能出现的403错误。
+
+    例如：
+    URL: /common/proxy-image?url=https://img9.doubanio.com/...
+    """
+    try:
+        # 设置请求头，模拟浏览器访问
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8',
+            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive',
+            'Referer': 'https://www.douban.com/'
+        }
+
+        # 发送请求获取图片
+        response = requests.get(url, headers=headers, timeout=10, stream=True)
+
+        if response.status_code == 200:
+            # 返回图片内容，保持原始内容类型
+            return Response(
+                response.content,
+                mimetype=response.headers.get('content-type', 'image/jpeg'),
+                headers={
+                    'Cache-Control': 'public, max-age=3600',  # 缓存1小时
+                    'Access-Control-Allow-Origin': '*'
+                }
+            )
+        else:
+            return AjaxResponse.from_error(f"获取图片失败: {response.status_code}")
+
+    except requests.exceptions.Timeout:
+        return AjaxResponse.from_error("图片加载超时")
+    except requests.exceptions.RequestException as e:
+        return AjaxResponse.from_error(f"图片加载失败: {str(e)}")
+    except Exception as e:
+        return AjaxResponse.from_error(f"服务器错误: {str(e)}")
 
 
 @reg.api.route(f"{Constants.RESOURCE_PREFIX}/<path:resource>")

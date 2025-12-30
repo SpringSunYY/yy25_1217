@@ -141,6 +141,25 @@ class MovieMapper:
         except Exception as e:
             print(f"根据ID查询电影信息表出错: {e}")
             return None
+
+    @staticmethod
+    def select_movie_by_movie_id(movie_id: int) -> Movie:
+        """
+        根据电影ID查询电影信息表
+
+        Args:
+            movie_id (int): 电影ID
+
+        Returns:
+            movie: 电影信息表对象
+        """
+        try:
+            stmt = select(MoviePo).where(MoviePo.movie_id == movie_id)
+            result = db.session.execute(stmt).scalar_one_or_none()
+            return Movie.model_validate(result) if result else None
+        except Exception as e:
+            print(f"根据电影ID查询电影信息表出错: {e}")
+            return None
     
 
     @staticmethod
@@ -157,7 +176,7 @@ class MovieMapper:
         try:
             now = datetime.now()
             new_po = MoviePo()
-            new_po.id = movie.id
+            # id字段由数据库自动生成，不手动设置
             new_po.movie_id = movie.movie_id
             new_po.title = movie.title
             new_po.rating = movie.rating

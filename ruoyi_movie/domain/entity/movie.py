@@ -7,7 +7,7 @@ from typing import Optional, Annotated
 from datetime import datetime
 from pydantic import Field, BeforeValidator
 from ruoyi_common.base.model import BaseEntity
-from ruoyi_common.base.transformer import to_datetime, str_to_int
+from ruoyi_common.base.transformer import to_datetime, str_to_int, str_to_float
 from ruoyi_common.base.schema_excel import ExcelField
 from ruoyi_common.base.schema_vo import VoField
 
@@ -42,6 +42,7 @@ class Movie(BaseEntity):
     # 评分
     rating: Annotated[
         Optional[float],
+        BeforeValidator(str_to_float),
         Field(default=None, description="评分"),
         VoField(query=True),
         ExcelField(name="评分")
@@ -154,7 +155,7 @@ class Movie(BaseEntity):
     cover_url: Annotated[
         Optional[str],
         Field(default=None, description="封面"),
-        ExcelField(name="封面")
+        ExcelField(name="封面链接")
     ]
     # 详情页
     detail_url: Annotated[
