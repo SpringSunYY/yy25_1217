@@ -1,15 +1,20 @@
 <template>
-  <el-image
-    :src="`${currentSrc}`"
-    fit="cover"
-    :style="`width:${realWidth};height:${realHeight};`"
-    :preview-src-list="currentSrcList"
-    @error="handleImageError"
-  >
-    <div slot="error" class="image-slot">
-      <i class="el-icon-picture-outline"></i>
-    </div>
-  </el-image>
+  <div v-if="currentSrc && currentSrc !== ''" :style="`width:${realWidth};height:${realHeight};`">
+    <el-image
+      :src="`${currentSrc}`"
+      fit="cover"
+      :style="`width:100%;height:100%;`"
+      :preview-src-list="currentSrcList"
+      @error="handleImageError"
+    >
+      <div slot="error" class="image-slot">
+        <i class="el-icon-picture-outline"></i>
+      </div>
+    </el-image>
+  </div>
+  <div v-else :style="`width:${realWidth};height:${realHeight};background-color:#f5f5f5;display:flex;align-items:center;justify-content:center;border-radius:5px;`" class="image-slot">
+    <i class="el-icon-picture-outline" style="font-size:24px;color:#909399;"></i>
+  </div>
 </template>
 
 <script>
@@ -19,8 +24,9 @@ export default {
   name: "ImagePreview",
   props: {
     src: {
-      type: String,
-      required: true
+      type: [String, null],
+      required: false,
+      default: null
     },
     width: {
       type: [Number, String],
@@ -38,6 +44,10 @@ export default {
   },
   computed: {
     realSrc() {
+      // 如果 src 为空，返回空字符串
+      if (!this.src || this.src === null || this.src === '') {
+        return '';
+      }
       let real_src = this.src.split(",")[0];
       if (isExternal(real_src)) {
         if (this.useProxyForExternal) {
@@ -49,6 +59,10 @@ export default {
       return process.env.VUE_APP_BASE_API + real_src;
     },
     realSrcList() {
+      // 如果 src 为空，返回空数组
+      if (!this.src || this.src === null || this.src === '') {
+        return [];
+      }
       let real_src_list = this.src.split(",");
       let srcList = [];
       real_src_list.forEach(item => {
@@ -63,6 +77,10 @@ export default {
       return srcList;
     },
     currentSrc() {
+      // 如果 src 为空，返回空字符串
+      if (!this.src || this.src === null || this.src === '') {
+        return '';
+      }
       let real_src = this.src.split(",")[0];
       if (isExternal(real_src)) {
         if (this.useProxyForExternal) {
@@ -73,6 +91,10 @@ export default {
       return process.env.VUE_APP_BASE_API + real_src;
     },
     currentSrcList() {
+      // 如果 src 为空，返回空数组
+      if (!this.src || this.src === null || this.src === '') {
+        return [];
+      }
       let real_src_list = this.src.split(",");
       let srcList = [];
       real_src_list.forEach(item => {
@@ -96,8 +118,11 @@ export default {
   methods: {
     handleImageError() {
       // 当外部图片加载失败时，切换到代理模式
-      if (!this.useProxyForExternal && isExternal(this.src.split(",")[0])) {
-        this.useProxyForExternal = true;
+      if (!this.useProxyForExternal && this.src && this.src !== null && this.src !== '') {
+        const real_src = this.src.split(",")[0];
+        if (isExternal(real_src)) {
+          this.useProxyForExternal = true;
+        }
       }
     }
   }

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # @Author  : YY
 # @FileName: movie_review_mapper.py
-# @Time    : 2025-12-21 18:49:52
+# @Time    : 2025-12-30 17:06:59
 
-from typing import List
 from datetime import datetime
+from typing import List
 
 from flask import g
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, delete
 
 from ruoyi_admin.ext import db
 from ruoyi_movie.domain.entity import MovieReview
@@ -31,42 +31,23 @@ class MovieReviewMapper:
             # 构建查询条件
             stmt = select(MovieReviewPo)
 
-
             if movie_review.id is not None:
                 stmt = stmt.where(MovieReviewPo.id == movie_review.id)
-
-
 
             if movie_review.review_id is not None:
                 stmt = stmt.where(MovieReviewPo.review_id == movie_review.review_id)
 
-
-
             if movie_review.movie_id is not None:
                 stmt = stmt.where(MovieReviewPo.movie_id == movie_review.movie_id)
-
-
 
             if movie_review.type is not None:
                 stmt = stmt.where(MovieReviewPo.type == movie_review.type)
 
-
-
             if movie_review.user_name:
                 stmt = stmt.where(MovieReviewPo.user_name.like("%" + str(movie_review.user_name) + "%"))
 
-
-
             if movie_review.rating_star is not None:
                 stmt = stmt.where(MovieReviewPo.rating_star == movie_review.rating_star)
-
-
-
-
-
-
-
-
 
             _params = getattr(movie_review, "params", {}) or {}
             begin_val = _params.get("beginCommentTime")
@@ -76,15 +57,8 @@ class MovieReviewMapper:
             if end_val is not None:
                 stmt = stmt.where(MovieReviewPo.comment_time <= end_val)
 
-
-
             if movie_review.review_title:
                 stmt = stmt.where(MovieReviewPo.review_title.like("%" + str(movie_review.review_title) + "%"))
-
-
-
-
-
 
             if "criterian_meta" in g and g.criterian_meta.page:
                 g.criterian_meta.page.stmt = stmt
@@ -95,25 +69,34 @@ class MovieReviewMapper:
             print(f"查询影评信息表列表出错: {e}")
             return []
 
-    
     @staticmethod
-    def select_movie_review_by_id(review_id: int) -> MovieReview:
+    def select_movie_review_by_id(id: int) -> MovieReview:
         """
         根据ID查询影评信息表
 
         Args:
-            review_id (int): 评论ID
+            id (int): 编号
 
         Returns:
             movie_review: 影评信息表对象
         """
         try:
-            result = db.session.get(MovieReviewPo, review_id)
+            stmt = select(MovieReviewPo).where(MovieReviewPo.id == id)
+            result = db.session.execute(stmt).scalar_one_or_none()
             return MovieReview.model_validate(result) if result else None
         except Exception as e:
             print(f"根据ID查询影评信息表出错: {e}")
             return None
-    
+
+    @staticmethod
+    def select_movie_review_by_review_id(review_id) -> MovieReview:
+        try:
+            stmt = select(MovieReviewPo).where(MovieReviewPo.review_id == review_id)
+            result = db.session.execute(stmt).scalar_one_or_none()
+            return MovieReview.model_validate(result) if result else None
+        except Exception as e:
+            print(f"根据ID字段查询影评信息表出错: {e}")
+        return None
 
     @staticmethod
     def insert_movie_review(movie_review: MovieReview) -> int:
@@ -144,14 +127,13 @@ class MovieReviewMapper:
             new_po.content = movie_review.content
             db.session.add(new_po)
             db.session.commit()
-            movie_review.review_id = new_po.review_id
+            movie_review.id = new_po.id
             return 1
         except Exception as e:
             db.session.rollback()
             print(f"新增影评信息表出错: {e}")
             return 0
 
-    
     @staticmethod
     def update_movie_review(movie_review: MovieReview) -> int:
         """
@@ -164,13 +146,13 @@ class MovieReviewMapper:
             int: 更新的记录数
         """
         try:
-            
-            existing = db.session.get(MovieReviewPo, movie_review.review_id)
+
+            existing = db.session.get(MovieReviewPo, movie_review.id)
             if not existing:
                 return 0
             now = datetime.now()
-            existing.id = movie_review.id
             # 主键不参与更新
+            existing.review_id = movie_review.review_id
             existing.movie_id = movie_review.movie_id
             existing.type = movie_review.type
             existing.user_name = movie_review.user_name
@@ -184,7 +166,7 @@ class MovieReviewMapper:
             existing.content = movie_review.content
             db.session.commit()
             return 1
-            
+
         except Exception as e:
             db.session.rollback()
             print(f"修改影评信息表出错: {e}")
@@ -202,7 +184,7 @@ class MovieReviewMapper:
             int: 删除的记录数
         """
         try:
-            stmt = delete(MovieReviewPo).where(MovieReviewPo.review_id.in_(ids))
+            stmt = delete(MovieReviewPo).where(MovieReviewPo.id.in_(ids))
             result = db.session.execute(stmt)
             db.session.commit()
             return result.rowcount
@@ -210,4 +192,3 @@ class MovieReviewMapper:
             db.session.rollback()
             print(f"批量删除影评信息表出错: {e}")
             return 0
-    

@@ -1,4 +1,3 @@
-
 from typing import List
 
 from flask import g
@@ -10,7 +9,8 @@ from werkzeug.datastructures import FileStorage
 from ruoyi_common.base.model import AjaxResponse, TableResponse
 from ruoyi_common.constant import HttpStatus
 from ruoyi_common.descriptor.serializer import BaseSerializer, JsonSerializer
-from ruoyi_common.descriptor.validator import QueryValidator, BodyValidator, PathValidator, FileDownloadValidator, FileUploadValidator
+from ruoyi_common.descriptor.validator import QueryValidator, BodyValidator, PathValidator, FileDownloadValidator, \
+    FileUploadValidator
 from ruoyi_common.domain.enum import BusinessType
 from ruoyi_common.utils.base import ExcelUtil
 from ruoyi_framework.descriptor.log import Log
@@ -29,6 +29,7 @@ def _clear_page_context():
     if hasattr(g, "criterian_meta"):
         g.criterian_meta.page = None
 
+
 @gen.route('/list', methods=["GET"])
 @QueryValidator(is_page=True)
 @PreAuthorize(HasPerm('movie:movieReview:list'))
@@ -44,13 +45,13 @@ def movie_review_list(dto: MovieReview):
     return TableResponse(code=HttpStatus.SUCCESS, msg='查询成功', rows=movie_reviews)
 
 
-@gen.route('/<int:reviewId>', methods=['GET'])
+@gen.route('/<int:id>', methods=['GET'])
 @PathValidator()
 @PreAuthorize(HasPerm('movie:movieReview:query'))
 @JsonSerializer()
-def get_movie_review(review_id: int):
+def get_movie_review(id: int):
     """获取影评信息表详细信息"""
-    movie_review_entity = movie_review_service.select_movie_review_by_id(review_id)
+    movie_review_entity = movie_review_service.select_movie_review_by_id(id)
     return AjaxResponse.from_success(data=movie_review_entity)
 
 
@@ -69,7 +70,7 @@ def add_movie_review(dto: MovieReview):
     result = movie_review_service.insert_movie_review(movie_review_entity)
     if result > 0:
         return AjaxResponse.from_success(msg='新增成功')
-    return AjaxResponse.from_error(code=HttpStatus.ERROR, msg='新增失败')
+    return AjaxResponse.from_success( msg='新增失败')
 
 
 @gen.route('', methods=['PUT'])
@@ -87,8 +88,7 @@ def update_movie_review(dto: MovieReview):
     result = movie_review_service.update_movie_review(movie_review_entity)
     if result > 0:
         return AjaxResponse.from_success(msg='修改成功')
-    return AjaxResponse.from_error(code=HttpStatus.ERROR, msg='修改失败')
-
+    return AjaxResponse.from_error( msg='修改失败')
 
 
 @gen.route('/<ids>', methods=['DELETE'])
@@ -128,6 +128,7 @@ def export_movie_review(dto: MovieReview):
     excel_util = ExcelUtil(MovieReview)
     return excel_util.export_response(movie_reviews, "影评信息表数据")
 
+
 @gen.route('/importTemplate', methods=['POST'])
 @login_required
 @BaseSerializer()
@@ -136,14 +137,15 @@ def import_template():
     excel_util = ExcelUtil(MovieReview)
     return excel_util.import_template_response(sheetname="影评信息表数据")
 
+
 @gen.route('/importData', methods=['POST'])
 @FileUploadValidator()
 @PreAuthorize(HasPerm('movie:movieReview:import'))
 @Log(title='影评信息表管理', business_type=BusinessType.IMPORT)
 @JsonSerializer()
 def import_data(
-    file: List[FileStorage],
-    update_support: Annotated[bool, BeforeValidator(lambda x: x != "0")]
+        file: List[FileStorage],
+        update_support: Annotated[bool, BeforeValidator(lambda x: x != "0")]
 ):
     """导入影评信息表数据"""
     file = file[0]

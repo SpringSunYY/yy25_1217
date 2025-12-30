@@ -22,7 +22,7 @@ class MovieReview(BaseEntity):
         BeforeValidator(str_to_int),
         Field(default=None, description="编号"),
         VoField(query=True),
-        ExcelField(name="编号")
+        ExcelField(name="编号",action="export")
     ]
     # 评论ID
     review_id: Annotated[
@@ -60,7 +60,7 @@ class MovieReview(BaseEntity):
         BeforeValidator(str_to_int),
         Field(default=None, description="星级（1–5）"),
         VoField(query=True),
-        ExcelField(name="星级（1–5）")
+        ExcelField(name="星级")
     ]
     # 有用数
     votes_up: Annotated[

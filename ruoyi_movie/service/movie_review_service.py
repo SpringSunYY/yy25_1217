@@ -25,19 +25,18 @@ class MovieReviewService:
         """
         return MovieReviewMapper.select_movie_review_list(movie_review)
 
-    
-    def select_movie_review_by_id(self, review_id: int) -> MovieReview:
+    def select_movie_review_by_id(self, id: int) -> MovieReview:
         """
         根据ID查询影评信息表
 
         Args:
-            review_id (int): 评论ID
+            id (int): 编号
 
         Returns:
             movie_review: 影评信息表对象
         """
-        return MovieReviewMapper.select_movie_review_by_id(review_id)
-    
+        return MovieReviewMapper.select_movie_review_by_id(id)
+
 
     def insert_movie_review(self, movie_review: MovieReview) -> int:
         """
@@ -49,9 +48,14 @@ class MovieReviewService:
         Returns:
             int: 插入的记录数
         """
+        # 首先查询是否已存在
+        existing = MovieReviewMapper.select_movie_review_by_review_id(movie_review.review_id)
+        if existing:
+            raise ServiceException("已存在该影评")
+        if existing.id != movie_review.id:
+            raise ServiceException("该评论编号已存在，不可修改为此编号")
         return MovieReviewMapper.insert_movie_review(movie_review)
 
-    
     def update_movie_review(self, movie_review: MovieReview) -> int:
         """
         修改影评信息表
@@ -62,10 +66,13 @@ class MovieReviewService:
         Returns:
             int: 更新的记录数
         """
+        existing = MovieReviewMapper.select_movie_review_by_review_id(movie_review.review_id)
+        if not existing:
+            raise ServiceException("不存在该影评")
+        if existing.id != movie_review.id:
+            raise ServiceException("该评论编号已存在，不可修改为此编号")
         return MovieReviewMapper.update_movie_review(movie_review)
-    
 
-    
     def delete_movie_review_by_ids(self, ids: List[int]) -> int:
         """
         批量删除影评信息表
@@ -77,7 +84,6 @@ class MovieReviewService:
             int: 删除的记录数
         """
         return MovieReviewMapper.delete_movie_review_by_ids(ids)
-    
 
     def import_movie_review(self, movie_review_list: List[MovieReview], is_update: bool = False) -> str:
         """
@@ -101,11 +107,11 @@ class MovieReviewService:
         for movie_review in movie_review_list:
             try:
                 display_value = movie_review
-                
+
                 display_value = getattr(movie_review, "review_id", display_value)
                 existing = None
                 if movie_review.review_id is not None:
-                    existing = MovieReviewMapper.select_movie_review_by_id(movie_review.review_id)
+                    existing = MovieReviewMapper.select_movie_review_by_review_id(movie_review.review_id)
                 if existing:
                     if is_update:
                         result = MovieReviewMapper.update_movie_review(movie_review)
@@ -115,7 +121,7 @@ class MovieReviewService:
                         continue
                 else:
                     result = MovieReviewMapper.insert_movie_review(movie_review)
-                
+
                 if result > 0:
                     success_count += 1
                     success_msg += f"<br/> 第{success_count}条数据，操作成功：{display_value}"
