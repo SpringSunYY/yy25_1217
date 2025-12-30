@@ -132,7 +132,7 @@ class MovieService:
         """
         return MovieMapper.select_movie_list(movie)
 
-    
+
     def select_movie_by_id(self, id: int) -> Movie:
         """
         根据ID查询电影信息表
@@ -144,7 +144,7 @@ class MovieService:
             movie: 电影信息表对象
         """
         return MovieMapper.select_movie_by_id(id)
-    
+
 
     def insert_movie(self, movie: Movie) -> int:
         """
@@ -156,9 +156,13 @@ class MovieService:
         Returns:
             int: 插入的记录数
         """
+        #首先查询是否已存在
+        existing = MovieMapper.select_movie_by_movie_id(movie.movie_id)
+        if existing:
+            raise ServiceException("已存在该电影")
         return MovieMapper.insert_movie(movie)
 
-    
+
     def update_movie(self, movie: Movie) -> int:
         """
         修改电影信息表
@@ -169,10 +173,15 @@ class MovieService:
         Returns:
             int: 更新的记录数
         """
+        existing = MovieMapper.select_movie_by_movie_id(movie.movie_id)
+        if not existing:
+            raise ServiceException("不存在该电影")
+        if movie.id != existing.id:
+            raise ServiceException("该电影编号已存在，不可修为此编号")
         return MovieMapper.update_movie(movie)
-    
 
-    
+
+
     def delete_movie_by_ids(self, ids: List[int]) -> int:
         """
         批量删除电影信息表
@@ -184,7 +193,7 @@ class MovieService:
             int: 删除的记录数
         """
         return MovieMapper.delete_movie_by_ids(ids)
-    
+
 
     def import_movie(self, movie_list: List[Movie], is_update: bool = False) -> str:
         """
@@ -233,7 +242,7 @@ class MovieService:
                         continue
                 else:
                     result = MovieMapper.insert_movie(movie)
-                
+
                 if result > 0:
                     success_count += 1
                     success_msg += f"<br/> 第{success_count}条数据，操作成功：{display_value}"

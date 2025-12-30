@@ -257,16 +257,16 @@
           <el-input v-model="form.title" placeholder="请输入名称"/>
         </el-form-item>
         <el-form-item label="评分" prop="rating">
-          <el-input v-model="form.rating" placeholder="请输入评分"/>
+          <el-input-number v-model="form.rating" placeholder="请输入评分"/>
         </el-form-item>
         <el-form-item label="看过人数" prop="viewCount">
-          <el-input v-model="form.viewCount" placeholder="请输入看过人数"/>
+          <el-input-number v-model="form.viewCount" placeholder="请输入看过人数"/>
         </el-form-item>
         <el-form-item label="想看人数" prop="wishCount">
-          <el-input v-model="form.wishCount" placeholder="请输入想看人数"/>
+          <el-input-number v-model="form.wishCount" placeholder="请输入想看人数"/>
         </el-form-item>
         <el-form-item label="总影评数" prop="reviewsCount">
-          <el-input v-model="form.reviewsCount" placeholder="请输入总影评数"/>
+          <el-input-number v-model="form.reviewsCount" placeholder="请输入总影评数"/>
         </el-form-item>
         <el-form-item label="语言" prop="language">
           <el-input v-model="form.language" placeholder="请输入语言"/>
@@ -286,8 +286,8 @@
         <el-form-item label="片长" prop="duration">
           <el-input v-model="form.duration" placeholder="请输入片长"/>
         </el-form-item>
-        <el-form-item label="片长（分钟）" prop="durationMinute">
-          <el-input v-model="form.durationMinute" placeholder="请输入片长（分钟）"/>
+        <el-form-item label="片长(分钟)" prop="durationMinute">
+          <el-input-number v-model="form.durationMinute" placeholder="请输入片长（分钟）"/>
         </el-form-item>
         <el-form-item label="上映日期" prop="pubDate">
           <el-input v-model="form.pubDate" placeholder="请输入上映日期"/>
@@ -301,7 +301,7 @@
           </el-date-picker>
         </el-form-item>
         <el-form-item label="上映年份" prop="publishYear">
-          <el-input v-model="form.publishYear" placeholder="请输入上映年份"/>
+          <el-input-number v-model="form.publishYear" placeholder="请输入上映年份"/>
         </el-form-item>
         <el-form-item label="类型" prop="genres">
           <el-input v-model="form.genres" placeholder="请输入类型"/>
