@@ -37,9 +37,9 @@ class MoviePo(db.Model):
         nullable=False,
         comment='名称'
     )
-    rating: Mapped[Optional[str]] = mapped_column(
+    rating: Mapped[Optional[float]] = mapped_column(
         'rating',
-        Numeric(10, 0),
+        Numeric(10, 1),
         nullable=True,
         comment='评分'
     )
