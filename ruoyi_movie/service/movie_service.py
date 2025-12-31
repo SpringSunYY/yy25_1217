@@ -195,6 +195,67 @@ class MovieService:
         return MovieMapper.delete_movie_by_ids(ids)
 
 
+    def search_movies(self, search_dto) -> List[Movie]:
+        """
+        电影搜索方法
+
+        Args:
+            search_dto: 搜索条件DTO
+
+        Returns:
+            List[Movie]: 搜索结果列表
+        """
+        # 构建Movie实体作为查询条件
+        movie_entity = Movie()
+
+        # 转换搜索条件
+        for attr in ['title', 'genres', 'country', 'directors', 'writers', 'actors']:
+            if hasattr(search_dto, attr) and getattr(search_dto, attr):
+                setattr(movie_entity, attr, getattr(search_dto, attr))
+
+        # 处理年份区间筛选
+        if hasattr(search_dto, 'year_range') and search_dto.year_range:
+            year_ranges = {
+                "2025-2020": (2020, 2025),
+                "2020-2015": (2015, 2020),
+                "2015-2010": (2010, 2015),
+                "2010-2005": (2005, 2010),
+                "2005-2000": (2000, 2005),
+                "2000-1995": (1995, 2000),
+                "1995-1990": (1990, 1995),
+                "1990-1985": (1985, 1990),
+                "1985-1980": (1980, 1985),
+                "更早": (0, 1980)
+            }
+            if search_dto.year_range in year_ranges:
+                start_year, end_year = year_ranges[search_dto.year_range]
+                # 设置年份范围查询条件
+                setattr(movie_entity, 'publish_year_start', start_year)
+                setattr(movie_entity, 'publish_year_end', end_year)
+            else:
+                # 如果是具体年份
+                try:
+                    year = int(search_dto.year_range)
+                    setattr(movie_entity, 'publish_year', year)
+                except:
+                    pass
+
+        # 处理排序参数
+        if hasattr(search_dto, 'sort_field') and hasattr(search_dto, 'sort_order'):
+            setattr(movie_entity, 'sort_field', search_dto.sort_field)
+            setattr(movie_entity, 'sort_order', search_dto.sort_order)
+
+        return MovieMapper.search_movies(movie_entity)
+
+    def get_search_options(self) -> dict:
+        """
+        获取搜索选项（类型、国家地区等）
+
+        Returns:
+            dict: 搜索选项
+        """
+        return MovieMapper.get_search_options()
+
     def import_movie(self, movie_list: List[Movie], is_update: bool = False) -> str:
         """
         导入电影信息表数据

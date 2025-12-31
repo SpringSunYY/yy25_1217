@@ -47,3 +47,20 @@ export function delMovie(id) {
     method: 'delete'
   })
 }
+
+// 电影搜索
+export function searchMovie(query) {
+  return request({
+    url: '/movie/movie/search',
+    method: 'get',
+    params: query
+  })
+}
+
+// 获取电影搜索选项
+export function getMovieSearchOptions() {
+  return request({
+    url: '/movie/movie/search/options',
+    method: 'get'
+  })
+}

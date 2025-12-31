@@ -3,15 +3,16 @@
 # @FileName: movie_mapper.py
 # @Time    : 2025-12-21 18:49:53
 
-from typing import List
 from datetime import datetime
+from typing import List
 
 from flask import g
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, delete, and_, or_, desc, asc
 
 from ruoyi_admin.ext import db
 from ruoyi_movie.domain.entity import Movie
 from ruoyi_movie.domain.po import MoviePo
+
 
 class MovieMapper:
     """电影信息表Mapper"""
@@ -210,6 +211,174 @@ class MovieMapper:
             db.session.rollback()
             print(f"修改电影信息表出错: {e}")
             return 0
+
+    @staticmethod
+    def search_movies(movie: Movie) -> List[Movie]:
+        """
+        电影搜索方法
+
+        Args:
+            movie (Movie): 搜索条件
+
+        Returns:
+            List[Movie]: 搜索结果列表
+        """
+        try:
+            # 构建查询条件
+            stmt = select(MoviePo)
+
+            # 搜索条件
+            if movie.title:
+                stmt = stmt.where(MoviePo.title.like("%" + str(movie.title) + "%"))
+
+            if movie.genres:
+                # 类型搜索，支持多个类型，用逗号分隔
+                genres_list = [g.strip() for g in movie.genres.split(',') if g.strip()]
+                if genres_list:
+                    genre_conditions = []
+                    for genre in genres_list:
+                        genre_conditions.append(MoviePo.genres.like("%" + genre + "%"))
+                    stmt = stmt.where(or_(*genre_conditions))
+
+            if movie.country:
+                # 国家地区搜索，支持多个国家，用/分隔
+                countries = [c.strip() for c in movie.country.split('/') if c.strip()]
+                if countries:
+                    country_conditions = []
+                    for country in countries:
+                        country_conditions.append(MoviePo.country.like("%" + country + "%"))
+                    stmt = stmt.where(or_(*country_conditions))
+
+            if movie.directors:
+                stmt = stmt.where(MoviePo.directors.like("%" + str(movie.directors) + "%"))
+
+            if movie.writers:
+                stmt = stmt.where(MoviePo.writers.like("%" + str(movie.writers) + "%"))
+
+            if movie.actors:
+                stmt = stmt.where(MoviePo.actors.like("%" + str(movie.actors) + "%"))
+
+            # 年份筛选 - 支持范围查询
+            year_start = getattr(movie, 'publish_year_start', None)
+            year_end = getattr(movie, 'publish_year_end', None)
+            publish_year = getattr(movie, 'publish_year', None)
+
+            if publish_year is not None:
+                stmt = stmt.where(MoviePo.publish_year == publish_year)
+            elif year_start is not None and year_end is not None:
+                if year_start == year_end:
+                    stmt = stmt.where(MoviePo.publish_year == year_start)
+                else:
+                    stmt = stmt.where(and_(MoviePo.publish_year >= year_start, MoviePo.publish_year <= year_end))
+
+            # 排序
+            sort_field = getattr(movie, 'sort_field', 'view_count')
+            sort_order = getattr(movie, 'sort_order', 'desc')
+
+            sort_column = None
+            if sort_field == "rating":
+                sort_column = MoviePo.rating
+            elif sort_field == "publish_date":
+                sort_column = MoviePo.publish_date
+            elif sort_field == "publish_year":
+                sort_column = MoviePo.publish_year
+            elif sort_field == "view_count":
+                sort_column = MoviePo.view_count
+            else:
+                sort_column = MoviePo.view_count  # 默认按看过人数排序
+
+            if sort_order == "asc":
+                stmt = stmt.order_by(asc(sort_column))
+            else:
+                stmt = stmt.order_by(desc(sort_column))
+
+            # 分页
+            if "criterian_meta" in g and g.criterian_meta.page:
+                g.criterian_meta.page.stmt = stmt
+
+            result = db.session.execute(stmt).scalars().all()
+            return [Movie.model_validate(item) for item in result] if result else []
+        except Exception as e:
+            print(f"搜索电影出错: {e}")
+            return []
+
+    @staticmethod
+    def get_search_options() -> dict:
+        """
+        获取搜索选项（类型、国家地区等）
+
+        Returns:
+            dict: 搜索选项
+        """
+        try:
+            # 获取所有类型及其出现次数 - 按出现次数降序排序
+            genre_counts = {}
+            genres_stmt = select(MoviePo.genres).where(MoviePo.genres.isnot(None))
+            genres_result = db.session.execute(genres_stmt).scalars().all()
+
+            for genre_str in genres_result:
+                if genre_str:
+                    # 按/分割类型
+                    genre_list = [g.strip() for g in genre_str.split('/') if g.strip()]
+                    for genre in genre_list:
+                        genre_counts[genre] = genre_counts.get(genre, 0) + 1
+
+            # 按出现次数降序排序
+            genres = sorted(genre_counts.keys(), key=lambda x: genre_counts[x], reverse=True)
+
+            # 获取所有国家地区及其出现次数 - 按出现次数降序排序
+            country_counts = {}
+            countries_stmt = select(MoviePo.country).where(MoviePo.country.isnot(None))
+            countries_result = db.session.execute(countries_stmt).scalars().all()
+
+            for country_str in countries_result:
+                if country_str:
+                    # 按/分割国家
+                    country_list = [c.strip() for c in country_str.split('/') if c.strip()]
+                    for country in country_list:
+                        country_counts[country] = country_counts.get(country, 0) + 1
+
+            # 按出现次数降序排序
+            countries = sorted(country_counts.keys(), key=lambda x: country_counts[x], reverse=True)
+
+            # 年份区间选项
+            year_ranges = [
+                {"label": "2025-2020", "value": "2025-2020"},
+                {"label": "2020-2015", "value": "2020-2015"},
+                {"label": "2015-2010", "value": "2015-2010"},
+                {"label": "2010-2005", "value": "2010-2005"},
+                {"label": "2005-2000", "value": "2005-2000"},
+                {"label": "2000-1995", "value": "2000-1995"},
+                {"label": "1995-1990", "value": "1995-1990"},
+                {"label": "1990-1985", "value": "1990-1985"},
+                {"label": "1985-1980", "value": "1985-1980"},
+                {"label": "更早", "value": "更早"}
+            ]
+
+            # 排序选项
+            sort_options = [
+                {"label": "热度↓", "value": "view_count_desc"},
+                {"label": "热度↑", "value": "view_count_asc"},
+                {"label": "评分↓", "value": "rating_desc"},
+                {"label": "评分↑", "value": "rating_asc"},
+                {"label": "年份↓", "value": "publish_year_desc"},
+                {"label": "年份↑", "value": "publish_year_asc"}
+            ]
+
+            return {
+                "genres": genres,
+                "countries": countries,
+                "yearRanges": year_ranges,
+                "sortOptions": sort_options
+            }
+        except Exception as e:
+            print(f"获取搜索选项出错: {e}")
+            return {
+                "genres": [],
+                "countries": [],
+                "yearRanges": [],
+                "sortOptions": []
+            }
 
     @staticmethod
     def delete_movie_by_ids(ids: List[int]) -> int:

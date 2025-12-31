@@ -164,7 +164,74 @@ class Movie(BaseEntity):
         ExcelField(name="详情页")
     ]
 
+    # 年份范围查询字段（用于搜索）
+    publish_year_start: Optional[int] = Field(default=None, description="上映年份开始")
+    publish_year_end: Optional[int] = Field(default=None, description="上映年份结束")
+
+    # 排序字段（用于搜索）
+    sort_field: Optional[str] = Field(default=None, description="排序字段")
+    sort_order: Optional[str] = Field(default=None, description="排序顺序")
+
     # 页码
     page_num: Optional[int] = Field(default=1, description="页码")
     # 每页数量
     page_size: Optional[int] = Field(default=10, description="每页数量")
+
+
+class MovieSearchDTO(BaseEntity):
+    """
+    电影搜索DTO
+    """
+    # 搜索条件
+    title: Annotated[
+        Optional[str],
+        Field(default=None, description="电影名称"),
+        VoField(query=True)
+    ]
+    genres: Annotated[
+        Optional[str],
+        Field(default=None, description="类型"),
+        VoField(query=True)
+    ]
+    country: Annotated[
+        Optional[str],
+        Field(default=None, description="国家地区"),
+        VoField(query=True)
+    ]
+    directors: Annotated[
+        Optional[str],
+        Field(default=None, description="导演"),
+        VoField(query=True)
+    ]
+    writers: Annotated[
+        Optional[str],
+        Field(default=None, description="编剧"),
+        VoField(query=True)
+    ]
+    actors: Annotated[
+        Optional[str],
+        Field(default=None, description="主演"),
+        VoField(query=True)
+    ]
+    # 排序字段
+    sort_field: Annotated[
+        Optional[str],
+        Field(default="view_count", description="排序字段"),
+        VoField(query=True)
+    ]
+    sort_order: Annotated[
+        Optional[str],
+        Field(default="desc", description="排序顺序"),
+        VoField(query=True)
+    ]
+    # 年份区间筛选
+    year_range: Annotated[
+        Optional[str],
+        Field(default=None, description="年份区间"),
+        VoField(query=True)
+    ]
+
+    # 页码
+    page_num: Optional[int] = Field(default=1, description="页码")
+    # 每页数量
+    page_size: Optional[int] = Field(default=20, description="每页数量")

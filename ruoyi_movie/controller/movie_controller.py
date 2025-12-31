@@ -16,7 +16,7 @@ from ruoyi_common.utils.base import ExcelUtil
 from ruoyi_framework.descriptor.log import Log
 from ruoyi_framework.descriptor.permission import HasPerm, PreAuthorize
 from ruoyi_movie.controller import movie as movie_bp
-from ruoyi_movie.domain.entity import Movie
+from ruoyi_movie.domain.entity import Movie, MovieSearchDTO
 from ruoyi_movie.service.movie_service import MovieService
 
 # 使用 controller/__init__.py 中定义的蓝图
@@ -53,6 +53,23 @@ def get_movie(id: int):
     """获取电影信息表详细信息"""
     movie_entity = movie_service.select_movie_by_id(id)
     return AjaxResponse.from_success(data=movie_entity)
+
+
+@gen.route('/search', methods=["GET"])
+@QueryValidator(is_page=True)
+@JsonSerializer()
+def movie_search(dto: MovieSearchDTO):
+    """电影搜索接口"""
+    movies = movie_service.search_movies(dto)
+    return TableResponse(code=HttpStatus.SUCCESS, msg='搜索成功', rows=movies)
+
+
+@gen.route('/search/options', methods=["GET"])
+@JsonSerializer()
+def movie_search_options():
+    """获取电影搜索选项"""
+    options = movie_service.get_search_options()
+    return AjaxResponse.from_success(data=options)
 
 
 @gen.route('', methods=['POST'])
