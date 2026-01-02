@@ -1,4 +1,3 @@
-
 from typing import List
 
 from flask import g
@@ -10,7 +9,8 @@ from werkzeug.datastructures import FileStorage
 from ruoyi_common.base.model import AjaxResponse, TableResponse
 from ruoyi_common.constant import HttpStatus
 from ruoyi_common.descriptor.serializer import BaseSerializer, JsonSerializer
-from ruoyi_common.descriptor.validator import QueryValidator, BodyValidator, PathValidator, FileDownloadValidator, FileUploadValidator
+from ruoyi_common.descriptor.validator import QueryValidator, BodyValidator, PathValidator, FileDownloadValidator, \
+    FileUploadValidator
 from ruoyi_common.domain.enum import BusinessType
 from ruoyi_common.utils.base import ExcelUtil
 from ruoyi_framework.descriptor.log import Log
@@ -28,6 +28,7 @@ recommend_service = RecommendService()
 def _clear_page_context():
     if hasattr(g, "criterian_meta"):
         g.criterian_meta.page = None
+
 
 @gen.route('/list', methods=["GET"])
 @QueryValidator(is_page=True)
@@ -69,7 +70,7 @@ def add_recommend(dto: Recommend):
     result = recommend_service.insert_recommend(recommend_entity)
     if result > 0:
         return AjaxResponse.from_success(msg='新增成功')
-    return AjaxResponse.from_error(code=HttpStatus.ERROR, msg='新增失败')
+    return AjaxResponse.from_error(msg='新增失败')
 
 
 @gen.route('', methods=['PUT'])
@@ -87,8 +88,7 @@ def update_recommend(dto: Recommend):
     result = recommend_service.update_recommend(recommend_entity)
     if result > 0:
         return AjaxResponse.from_success(msg='修改成功')
-    return AjaxResponse.from_error(code=HttpStatus.ERROR, msg='修改失败')
-
+    return AjaxResponse.from_error(msg='修改失败')
 
 
 @gen.route('/<ids>', methods=['DELETE'])
@@ -128,6 +128,7 @@ def export_recommend(dto: Recommend):
     excel_util = ExcelUtil(Recommend)
     return excel_util.export_response(recommends, "用户推荐数据")
 
+
 @gen.route('/importTemplate', methods=['POST'])
 @login_required
 @BaseSerializer()
@@ -136,14 +137,15 @@ def import_template():
     excel_util = ExcelUtil(Recommend)
     return excel_util.import_template_response(sheetname="用户推荐数据")
 
+
 @gen.route('/importData', methods=['POST'])
 @FileUploadValidator()
 @PreAuthorize(HasPerm('movie:recommend:import'))
 @Log(title='用户推荐管理', business_type=BusinessType.IMPORT)
 @JsonSerializer()
 def import_data(
-    file: List[FileStorage],
-    update_support: Annotated[bool, BeforeValidator(lambda x: x != "0")]
+        file: List[FileStorage],
+        update_support: Annotated[bool, BeforeValidator(lambda x: x != "0")]
 ):
     """导入用户推荐数据"""
     file = file[0]

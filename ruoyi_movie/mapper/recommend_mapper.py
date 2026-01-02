@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # @Author  : YY
 # @FileName: recommend_mapper.py
-# @Time    : 2025-12-21 18:49:52
+# @Time    : 2026-01-02 18:33:22
 
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from flask import g
@@ -16,8 +16,8 @@ from ruoyi_movie.domain.po import RecommendPo
 class RecommendMapper:
     """用户推荐Mapper"""
 
-    @staticmethod
-    def select_recommend_list(recommend: Recommend) -> List[Recommend]:
+    @classmethod
+    def select_recommend_list(cls, recommend: Recommend) -> List[Recommend]:
         """
         查询用户推荐列表
 
@@ -31,26 +31,14 @@ class RecommendMapper:
             # 构建查询条件
             stmt = select(RecommendPo)
 
-
             if recommend.id is not None:
                 stmt = stmt.where(RecommendPo.id == recommend.id)
-
-
 
             if recommend.user_id is not None:
                 stmt = stmt.where(RecommendPo.user_id == recommend.user_id)
 
-
-
             if recommend.user_name:
                 stmt = stmt.where(RecommendPo.user_name.like("%" + str(recommend.user_name) + "%"))
-
-
-
-            if recommend.content:
-                stmt = stmt.where(RecommendPo.content.like("%" + str(recommend.content) + "%"))
-
-
 
             _params = getattr(recommend, "params", {}) or {}
             begin_val = _params.get("beginCreateTime")
@@ -70,9 +58,9 @@ class RecommendMapper:
             print(f"查询用户推荐列表出错: {e}")
             return []
 
-    
-    @staticmethod
-    def select_recommend_by_id(id: int) -> Recommend:
+
+    @classmethod
+    def select_recommend_by_id(cls, id: int) -> Optional[Recommend]:
         """
         根据ID查询用户推荐
 
@@ -88,10 +76,10 @@ class RecommendMapper:
         except Exception as e:
             print(f"根据ID查询用户推荐出错: {e}")
             return None
-    
 
-    @staticmethod
-    def insert_recommend(recommend: Recommend) -> int:
+
+    @classmethod
+    def insert_recommend(cls, recommend: Recommend) -> int:
         """
         新增用户推荐
 
@@ -108,6 +96,7 @@ class RecommendMapper:
             new_po.user_id = recommend.user_id
             new_po.user_name = recommend.user_name
             new_po.content = recommend.content
+            new_po.model_info = recommend.model_info
             new_po.create_time = recommend.create_time or now
             db.session.add(new_po)
             db.session.commit()
@@ -118,9 +107,9 @@ class RecommendMapper:
             print(f"新增用户推荐出错: {e}")
             return 0
 
-    
-    @staticmethod
-    def update_recommend(recommend: Recommend) -> int:
+
+    @classmethod
+    def update_recommend(cls, recommend: Recommend) -> int:
         """
         修改用户推荐
 
@@ -131,7 +120,7 @@ class RecommendMapper:
             int: 更新的记录数
         """
         try:
-            
+
             existing = db.session.get(RecommendPo, recommend.id)
             if not existing:
                 return 0
@@ -140,17 +129,18 @@ class RecommendMapper:
             existing.user_id = recommend.user_id
             existing.user_name = recommend.user_name
             existing.content = recommend.content
+            existing.model_info = recommend.model_info
             existing.create_time = recommend.create_time
             db.session.commit()
             return 1
-            
+
         except Exception as e:
             db.session.rollback()
             print(f"修改用户推荐出错: {e}")
             return 0
 
-    @staticmethod
-    def delete_recommend_by_ids(ids: List[int]) -> int:
+    @classmethod
+    def delete_recommend_by_ids(cls, ids: List[int]) -> int:
         """
         批量删除用户推荐
 
@@ -169,4 +159,3 @@ class RecommendMapper:
             db.session.rollback()
             print(f"批量删除用户推荐出错: {e}")
             return 0
-    

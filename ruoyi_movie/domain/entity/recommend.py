@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Author  : YY
 # @FileName: recommend.py
-# @Time    : 2025-12-21 18:49:52
+# @Time    : 2026-01-02 18:28:02
 
 from typing import Optional, Annotated
 from datetime import datetime
@@ -43,8 +43,13 @@ class Recommend(BaseEntity):
     content: Annotated[
         Optional[str],
         Field(default=None, description="推荐内容"),
-        VoField(query=True),
         ExcelField(name="推荐内容")
+    ]
+    # 推荐模型
+    model_info: Annotated[
+        Optional[str],
+        Field(default=None, description="推荐模型"),
+        ExcelField(name="推荐模型")
     ]
     # 创建时间
     create_time: Annotated[

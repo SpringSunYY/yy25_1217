@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 # @Author  : YY
 # @FileName: recommend_service.py
-# @Time    : 2025-12-21 18:49:52
+# @Time    : 2026-01-02 18:33:22
 
-from typing import List
+from typing import List, Optional
 
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
@@ -12,8 +12,8 @@ from ruoyi_movie.mapper.recommend_mapper import RecommendMapper
 
 class RecommendService:
     """用户推荐服务类"""
-
-    def select_recommend_list(self, recommend: Recommend) -> List[Recommend]:
+    @classmethod
+    def select_recommend_list(cls, recommend: Recommend) -> List[Recommend]:
         """
         查询用户推荐列表
 
@@ -25,8 +25,9 @@ class RecommendService:
         """
         return RecommendMapper.select_recommend_list(recommend)
 
-    
-    def select_recommend_by_id(self, id: int) -> Recommend:
+
+    @classmethod
+    def select_recommend_by_id(cls, id: int) -> Optional[Recommend]:
         """
         根据ID查询用户推荐
 
@@ -37,9 +38,9 @@ class RecommendService:
             recommend: 用户推荐对象
         """
         return RecommendMapper.select_recommend_by_id(id)
-    
 
-    def insert_recommend(self, recommend: Recommend) -> int:
+    @classmethod
+    def insert_recommend(cls, recommend: Recommend) -> int:
         """
         新增用户推荐
 
@@ -51,8 +52,9 @@ class RecommendService:
         """
         return RecommendMapper.insert_recommend(recommend)
 
-    
-    def update_recommend(self, recommend: Recommend) -> int:
+
+    @classmethod
+    def update_recommend(cls, recommend: Recommend) -> int:
         """
         修改用户推荐
 
@@ -63,10 +65,11 @@ class RecommendService:
             int: 更新的记录数
         """
         return RecommendMapper.update_recommend(recommend)
-    
 
-    
-    def delete_recommend_by_ids(self, ids: List[int]) -> int:
+
+
+    @classmethod
+    def delete_recommend_by_ids(cls, ids: List[int]) -> int:
         """
         批量删除用户推荐
 
@@ -77,9 +80,9 @@ class RecommendService:
             int: 删除的记录数
         """
         return RecommendMapper.delete_recommend_by_ids(ids)
-    
 
-    def import_recommend(self, recommend_list: List[Recommend], is_update: bool = False) -> str:
+    @classmethod
+    def import_recommend(cls, recommend_list: List[Recommend], is_update: bool = False) -> str:
         """
         导入用户推荐数据
 
@@ -101,7 +104,7 @@ class RecommendService:
         for recommend in recommend_list:
             try:
                 display_value = recommend
-                
+
                 display_value = getattr(recommend, "id", display_value)
                 existing = None
                 if recommend.id is not None:
@@ -115,7 +118,7 @@ class RecommendService:
                         continue
                 else:
                     result = RecommendMapper.insert_recommend(recommend)
-                
+
                 if result > 0:
                     success_count += 1
                     success_msg += f"<br/> 第{success_count}条数据，操作成功：{display_value}"

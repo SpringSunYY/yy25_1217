@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 # @Author  : YY
 # @FileName: recommend_po.py
-# @Time    : 2025-12-21 18:49:52
+# @Time    : 2026-01-02 18:28:02
 
 from typing import Optional
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, Date, DateTime, Float, Integer, JSON, LargeBinary, Numeric, String, Text, Time
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, Float, Integer, JSON, LargeBinary, Numeric, String, Text, \
+    Time
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ruoyi_admin.ext import db
+
 
 class RecommendPo(db.Model):
     """
@@ -21,7 +23,7 @@ class RecommendPo(db.Model):
         'id',
         BigInteger,
         primary_key=True,
-        autoincrement=False,
+        autoincrement=True,
         nullable=False,
         comment='推荐编号'
     )
@@ -42,6 +44,12 @@ class RecommendPo(db.Model):
         Text,
         nullable=False,
         comment='推荐内容'
+    )
+    model_info: Mapped[Optional[str]] = mapped_column(
+        'model_info',
+        Text,
+        nullable=False,
+        comment='推荐模型'
     )
     create_time: Mapped[Optional[datetime]] = mapped_column(
         'create_time',
