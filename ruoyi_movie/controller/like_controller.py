@@ -1,4 +1,3 @@
-
 from typing import List
 
 from flask import g
@@ -10,7 +9,8 @@ from werkzeug.datastructures import FileStorage
 from ruoyi_common.base.model import AjaxResponse, TableResponse
 from ruoyi_common.constant import HttpStatus
 from ruoyi_common.descriptor.serializer import BaseSerializer, JsonSerializer
-from ruoyi_common.descriptor.validator import QueryValidator, BodyValidator, PathValidator, FileDownloadValidator, FileUploadValidator
+from ruoyi_common.descriptor.validator import QueryValidator, BodyValidator, PathValidator, FileDownloadValidator, \
+    FileUploadValidator
 from ruoyi_common.domain.enum import BusinessType
 from ruoyi_common.utils.base import ExcelUtil
 from ruoyi_framework.descriptor.log import Log
@@ -28,6 +28,7 @@ like_service = LikeService()
 def _clear_page_context():
     if hasattr(g, "criterian_meta"):
         g.criterian_meta.page = None
+
 
 @gen.route('/list', methods=["GET"])
 @QueryValidator(is_page=True)
@@ -71,6 +72,7 @@ def add_like(dto: Like):
         return AjaxResponse.from_success(msg='新增成功')
     return AjaxResponse.from_error(code=HttpStatus.ERROR, msg='新增失败')
 
+
 @gen.route('/cancel', methods=['POST'])
 @BodyValidator()
 @PreAuthorize(HasPerm('movie:like:add'))
@@ -86,7 +88,8 @@ def cancel_like(dto: Like):
     result = like_service.cancel_like(like_entity)
     if result > 0:
         return AjaxResponse.from_success(msg='取消成功')
-    return AjaxResponse.from_error(code=HttpStatus.ERROR, msg='取消失败')
+    return AjaxResponse.from_error(msg='取消失败')
+
 
 @gen.route('', methods=['PUT'])
 @BodyValidator()
@@ -104,7 +107,6 @@ def update_like(dto: Like):
     if result > 0:
         return AjaxResponse.from_success(msg='修改成功')
     return AjaxResponse.from_error(code=HttpStatus.ERROR, msg='修改失败')
-
 
 
 @gen.route('/<ids>', methods=['DELETE'])
@@ -144,6 +146,7 @@ def export_like(dto: Like):
     excel_util = ExcelUtil(Like)
     return excel_util.export_response(likes, "用户点赞表数据")
 
+
 @gen.route('/importTemplate', methods=['POST'])
 @login_required
 @BaseSerializer()
@@ -152,14 +155,15 @@ def import_template():
     excel_util = ExcelUtil(Like)
     return excel_util.import_template_response(sheetname="用户点赞表数据")
 
+
 @gen.route('/importData', methods=['POST'])
 @FileUploadValidator()
 @PreAuthorize(HasPerm('movie:like:import'))
 @Log(title='用户点赞表管理', business_type=BusinessType.IMPORT)
 @JsonSerializer()
 def import_data(
-    file: List[FileStorage],
-    update_support: Annotated[bool, BeforeValidator(lambda x: x != "0")]
+        file: List[FileStorage],
+        update_support: Annotated[bool, BeforeValidator(lambda x: x != "0")]
 ):
     """导入用户点赞表数据"""
     file = file[0]
