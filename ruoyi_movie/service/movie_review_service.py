@@ -54,7 +54,7 @@ class MovieReviewService:
         if existing.id != movie_review.id:
             raise ServiceException("该评论编号已存在，不可修改为此编号")
         return MovieReviewMapper.insert_movie_review(movie_review)
-
+    @classmethod
     def update_movie_review(self, movie_review: MovieReview) -> int:
         """
         修改影评信息表

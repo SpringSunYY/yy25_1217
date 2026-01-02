@@ -5,11 +5,13 @@
 from datetime import datetime
 from typing import List
 
+from ruoyi_common.constant import ConfigConstants
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
 from ruoyi_common.utils.security_util import get_user_id, get_username
 from ruoyi_movie.domain.entity import View, Movie
 from ruoyi_movie.mapper.view_mapper import ViewMapper
+from ruoyi_system.service import SysConfigService
 
 
 class ViewService:
@@ -66,6 +68,9 @@ class ViewService:
         existing = ViewMapper.select_view_by_movie_id_and_date(movie.movie_id, user_id, now_date)
         if existing:
             return 0
+        score_str= SysConfigService.select_config_by_key(ConfigConstants.MOVIE_SCORE_VIEW)
+        ##转换成数值
+        score = int(score_str)
         view_info.user_id = user_id
         view_info.user_name = get_username()
         view_info.movie_id = movie.movie_id
@@ -75,7 +80,7 @@ class ViewService:
         view_info.directors = movie.directors
         view_info.country = movie.country
         view_info.actors = movie.actors
-        view_info.score = 1
+        view_info.score = score
         view_info.create_time = now_date
         return ViewMapper.insert_view(view_info)
 

@@ -63,7 +63,8 @@ class ViewMapper:
 
             if "criterian_meta" in g and g.criterian_meta.page:
                 g.criterian_meta.page.stmt = stmt
-
+            #根据创建时间倒序
+            stmt = stmt.order_by(ViewPo.create_time.desc())
             result = db.session.execute(stmt).scalars().all()
             return [View.model_validate(item) for item in result] if result else []
         except Exception as e:

@@ -69,7 +69,7 @@ class LikeMapper:
 
             if "criterian_meta" in g and g.criterian_meta.page:
                 g.criterian_meta.page.stmt = stmt
-
+            stmt = stmt.order_by(LikePo.create_time.desc())
             result = db.session.execute(stmt).scalars().all()
             return [Like.model_validate(item) for item in result] if result else []
         except Exception as e:
