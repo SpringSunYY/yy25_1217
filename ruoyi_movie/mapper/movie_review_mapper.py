@@ -13,6 +13,7 @@ from ruoyi_admin.ext import db
 from ruoyi_movie.domain.entity import MovieReview
 from ruoyi_movie.domain.po import MovieReviewPo
 
+
 class MovieReviewMapper:
     """影评信息表Mapper"""
 
@@ -192,3 +193,22 @@ class MovieReviewMapper:
             db.session.rollback()
             print(f"批量删除影评信息表出错: {e}")
             return 0
+
+    @staticmethod
+    def select_movie_review_by_movie_id(movie_id: int) -> List[MovieReview]:
+        """
+        根据电影ID查询影评信息表
+
+        Args:
+            movie_id (int): 电影ID
+
+        Returns:
+            List[MovieReview]: 影评信息表列表
+        """
+        try:
+            stmt = select(MovieReviewPo).where(MovieReviewPo.movie_id == movie_id)
+            result = db.session.execute(stmt).scalars().all()
+            return [MovieReview.model_validate(item) for item in result] if result else []
+        except Exception as e:
+            print(f"根据电影ID查询影评信息表出错: {e}")
+            return []

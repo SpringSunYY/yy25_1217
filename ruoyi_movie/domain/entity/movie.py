@@ -3,13 +3,20 @@
 # @FileName: movie.py
 # @Time    : 2025-12-21 18:49:53
 
-from typing import Optional, Annotated
 from datetime import datetime
+from typing import Optional, Annotated, List
+
 from pydantic import Field, BeforeValidator
+
+# 导入 MovieReview
+from ruoyi_movie.domain.entity import movie_review
+
+MovieReview = movie_review.MovieReview
+
 from ruoyi_common.base.model import BaseEntity
-from ruoyi_common.base.transformer import to_datetime, str_to_int, str_to_float
 from ruoyi_common.base.schema_excel import ExcelField
 from ruoyi_common.base.schema_vo import VoField
+from ruoyi_common.base.transformer import to_datetime, str_to_int, str_to_float
 
 
 class Movie(BaseEntity):
@@ -235,3 +242,21 @@ class MovieSearchDTO(BaseEntity):
     page_num: Optional[int] = Field(default=1, description="页码")
     # 每页数量
     page_size: Optional[int] = Field(default=20, description="每页数量")
+
+
+class MovieDetailDto(BaseEntity):
+    """
+    电影详情DTO
+    """
+    movie: Annotated[
+        Movie,
+        Field(default=None, description="电影信息")]
+
+    movie_review: Annotated[
+        List["MovieReview"],
+        Field(default=None, description="电影评论")
+    ]
+
+
+# 重建模型以解决Pydantic forward reference问题
+MovieDetailDto.model_rebuild()

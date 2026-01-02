@@ -1,9 +1,5 @@
 import request from '@/utils/request'
 
-
-
-
-
 // 查询电影信息表列表
 export function listMovie(query) {
   return request({
@@ -17,6 +13,14 @@ export function listMovie(query) {
 export function getMovie(id) {
   return request({
     url: '/movie/movie/' +id,
+    method: 'get'
+  })
+}
+
+//获取电影详细信息
+export function getMovieDetail(id) {
+  return request({
+    url: '/movie/movie/detail/' +id,
     method: 'get'
   })
 }

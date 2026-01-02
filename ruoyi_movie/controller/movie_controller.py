@@ -54,6 +54,14 @@ def get_movie(id: int):
     movie_entity = movie_service.select_movie_by_id(id)
     return AjaxResponse.from_success(data=movie_entity)
 
+@gen.route('/detail/<int:id>', methods=['GET'])
+@PathValidator()
+@PreAuthorize(HasPerm('movie:movie:query'))
+@JsonSerializer()
+def get_movie_detail(id: int):
+    """获取电影信息表详细信息"""
+    movie_entity = movie_service.select_movie_detail_by_id(id)
+    return AjaxResponse.from_success(data=movie_entity)
 
 @gen.route('/search', methods=["GET"])
 @QueryValidator(is_page=True)

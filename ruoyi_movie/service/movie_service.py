@@ -9,8 +9,12 @@ from datetime import datetime
 
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
+from ruoyi_movie.controller import movie
 from ruoyi_movie.domain.entity import Movie
+from ruoyi_movie.domain.entity.movie import MovieDetailDto
+from ruoyi_movie.mapper import MovieReviewMapper
 from ruoyi_movie.mapper.movie_mapper import MovieMapper
+
 
 class MovieService:
     """电影信息表服务类"""
@@ -132,7 +136,6 @@ class MovieService:
         """
         return MovieMapper.select_movie_list(movie)
 
-
     def select_movie_by_id(self, id: int) -> Movie:
         """
         根据ID查询电影信息表
@@ -145,6 +148,26 @@ class MovieService:
         """
         return MovieMapper.select_movie_by_id(id)
 
+    def select_movie_detail_by_id(self, movie_id) -> MovieDetailDto:
+        """
+        根据电影编号查询电影信息
+        Args:
+            movie_id:
+
+        Returns:
+
+        """
+        movie_detail = MovieDetailDto()
+        ##首先查询电影信息
+        movie_info = MovieMapper.select_movie_by_movie_id(movie_id)
+
+        ##如果电影信息不存在
+        if movie_info:
+            movie_detail.movie = movie_info
+        movie_reviews = MovieReviewMapper.select_movie_review_by_movie_id(movie_id)
+        if movie_reviews:
+            movie_detail.movie_review = movie_reviews
+        return movie_detail
 
     def insert_movie(self, movie: Movie) -> int:
         """
@@ -156,12 +179,11 @@ class MovieService:
         Returns:
             int: 插入的记录数
         """
-        #首先查询是否已存在
+        # 首先查询是否已存在
         existing = MovieMapper.select_movie_by_movie_id(movie.movie_id)
         if existing:
             raise ServiceException("已存在该电影")
         return MovieMapper.insert_movie(movie)
-
 
     def update_movie(self, movie: Movie) -> int:
         """
@@ -180,8 +202,6 @@ class MovieService:
             raise ServiceException("该电影编号已存在，不可修为此编号")
         return MovieMapper.update_movie(movie)
 
-
-
     def delete_movie_by_ids(self, ids: List[int]) -> int:
         """
         批量删除电影信息表
@@ -193,7 +213,6 @@ class MovieService:
             int: 删除的记录数
         """
         return MovieMapper.delete_movie_by_ids(ids)
-
 
     def search_movies(self, search_dto) -> List[Movie]:
         """

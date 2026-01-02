@@ -361,7 +361,6 @@
       <!-- 无限滚动加载触发器 -->
       <div v-if="hasMore" ref="loadTrigger" class="load-trigger"></div>
 
-
       <!-- 加载完毕 -->
       <div v-else-if="movieList.length > 0" class="load-finished">
         <span class="finished-text">没有更多电影了</span>
@@ -372,7 +371,7 @@
 
 <script>
 
-import {getMovieSearchOptions, searchMovie} from '@/api/movie/movie'
+import {getMovieDetail, getMovieSearchOptions, searchMovie} from '@/api/movie/movie'
 import ImagePreview from "@/components/ImagePreview/index.vue";
 
 export default {
@@ -599,14 +598,12 @@ export default {
 
     // 处理电影点击
     handleMovieClick(movie) {
-      // 跳转到电影详情页
-      this.$router.push({
-        path: '/movie/detail',
-        query: {
-          id: movie.id,
-          title: movie.title
-        }
-      })
+      // 跳转到电影详情页，打开一下个新页面
+      const routeData = this.$router.resolve({
+        name: 'MovieDetail',
+        params: {movieId: movie.movieId}
+      });
+      window.open(routeData.href, '_blank');
     },
 
 
