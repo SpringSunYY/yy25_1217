@@ -21,7 +21,7 @@ class ViewPo(db.Model):
         'id',
         BigInteger,
         primary_key=True,
-        autoincrement=False,
+        autoincrement=True,
         nullable=False,
         comment='浏览编号'
     )

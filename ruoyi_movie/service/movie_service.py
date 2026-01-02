@@ -4,17 +4,16 @@
 # @Time    : 2025-12-21 18:49:53
 
 import re
-from typing import List
 from datetime import datetime
+from typing import List
 
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
-from ruoyi_movie.controller import movie
 from ruoyi_movie.domain.entity import Movie
 from ruoyi_movie.domain.entity.movie import MovieDetailDto
 from ruoyi_movie.mapper import MovieReviewMapper
 from ruoyi_movie.mapper.movie_mapper import MovieMapper
-
+from ruoyi_movie.service.view_service import ViewService
 
 class MovieService:
     """电影信息表服务类"""
@@ -161,9 +160,11 @@ class MovieService:
         ##首先查询电影信息
         movie_info = MovieMapper.select_movie_by_movie_id(movie_id)
 
-        ##如果电影信息不存在
+        ##如果电影信息存在
         if movie_info:
             movie_detail.movie = movie_info
+            ##添加用户浏览记录
+            ViewService.add_view(movie_info)
         movie_reviews = MovieReviewMapper.select_movie_review_by_movie_id(movie_id)
         if movie_reviews:
             movie_detail.movie_review = movie_reviews

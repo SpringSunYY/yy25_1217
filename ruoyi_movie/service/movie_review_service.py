@@ -2,13 +2,13 @@
 # @Author  : YY
 # @FileName: movie_review_service.py
 # @Time    : 2025-12-21 18:49:52
-
 from typing import List
 
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
 from ruoyi_movie.domain.entity import MovieReview
 from ruoyi_movie.mapper.movie_review_mapper import MovieReviewMapper
+
 
 class MovieReviewService:
     """影评信息表服务类"""
@@ -36,7 +36,6 @@ class MovieReviewService:
             movie_review: 影评信息表对象
         """
         return MovieReviewMapper.select_movie_review_by_id(id)
-
 
     def insert_movie_review(self, movie_review: MovieReview) -> int:
         """

@@ -2,13 +2,15 @@
 # @Author  : YY
 # @FileName: view_service.py
 # @Time    : 2025-12-21 18:49:52
-
+from datetime import datetime
 from typing import List
 
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
-from ruoyi_movie.domain.entity import View
+from ruoyi_common.utils.security_util import get_user_id, get_username
+from ruoyi_movie.domain.entity import View, Movie
 from ruoyi_movie.mapper.view_mapper import ViewMapper
+
 
 class ViewService:
     """用户浏览服务类"""
@@ -25,7 +27,6 @@ class ViewService:
         """
         return ViewMapper.select_view_list(view)
 
-    
     def select_view_by_id(self, id: int) -> View:
         """
         根据ID查询用户浏览
@@ -37,7 +38,6 @@ class ViewService:
             view: 用户浏览对象
         """
         return ViewMapper.select_view_by_id(id)
-    
 
     def insert_view(self, view: View) -> int:
         """
@@ -51,7 +51,34 @@ class ViewService:
         """
         return ViewMapper.insert_view(view)
 
-    
+    @staticmethod
+    def add_view(movie: Movie) -> int:
+        """
+        添加用户浏览记录
+
+        Args:
+            movie (Movie): 添加的movie对象
+        """
+        view_info = View()
+        ##首先查询用户今天是否已经看过此电影
+        now_date = datetime.now()
+        user_id = get_user_id()
+        existing = ViewMapper.select_view_by_movie_id_and_date(movie.movie_id, user_id, now_date)
+        if existing:
+            return 0
+        view_info.user_id = user_id
+        view_info.user_name = get_username()
+        view_info.movie_id = movie.movie_id
+        view_info.movie_title = movie.title
+        view_info.cover_url = movie.cover_url
+        view_info.genres = movie.genres
+        view_info.directors = movie.directors
+        view_info.country = movie.country
+        view_info.actors = movie.actors
+        view_info.score = 1
+        view_info.create_time = now_date
+        return ViewMapper.insert_view(view_info)
+
     def update_view(self, view: View) -> int:
         """
         修改用户浏览
@@ -63,9 +90,7 @@ class ViewService:
             int: 更新的记录数
         """
         return ViewMapper.update_view(view)
-    
 
-    
     def delete_view_by_ids(self, ids: List[int]) -> int:
         """
         批量删除用户浏览
@@ -77,7 +102,6 @@ class ViewService:
             int: 删除的记录数
         """
         return ViewMapper.delete_view_by_ids(ids)
-    
 
     def import_view(self, view_list: List[View], is_update: bool = False) -> str:
         """
@@ -101,7 +125,7 @@ class ViewService:
         for view in view_list:
             try:
                 display_value = view
-                
+
                 display_value = getattr(view, "id", display_value)
                 existing = None
                 if view.id is not None:
@@ -115,7 +139,7 @@ class ViewService:
                         continue
                 else:
                     result = ViewMapper.insert_view(view)
-                
+
                 if result > 0:
                     success_count += 1
                     success_msg += f"<br/> 第{success_count}条数据，操作成功：{display_value}"

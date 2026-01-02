@@ -3,7 +3,7 @@
 # @FileName: movie_review_mapper.py
 # @Time    : 2025-12-30 17:06:59
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import List
 
 from flask import g

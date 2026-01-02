@@ -4,7 +4,7 @@
 # @Time    : 2025-12-21 18:49:52
 
 from typing import List
-from datetime import datetime
+from datetime import datetime, date
 
 from flask import g
 from sqlalchemy import select, update, delete
@@ -12,6 +12,7 @@ from sqlalchemy import select, update, delete
 from ruoyi_admin.ext import db
 from ruoyi_movie.domain.entity import View
 from ruoyi_movie.domain.po import ViewPo
+
 
 class ViewMapper:
     """用户浏览Mapper"""
@@ -31,49 +32,26 @@ class ViewMapper:
             # 构建查询条件
             stmt = select(ViewPo)
 
-
             if view.id is not None:
                 stmt = stmt.where(ViewPo.id == view.id)
-
-
-
-
 
             if view.user_name:
                 stmt = stmt.where(ViewPo.user_name.like("%" + str(view.user_name) + "%"))
 
-
-
-
-
             if view.movie_title:
                 stmt = stmt.where(ViewPo.movie_title.like("%" + str(view.movie_title) + "%"))
-
-
-
-
 
             if view.genres:
                 stmt = stmt.where(ViewPo.genres.like("%" + str(view.genres) + "%"))
 
-
-
             if view.directors:
                 stmt = stmt.where(ViewPo.directors.like("%" + str(view.directors) + "%"))
-
-
 
             if view.country:
                 stmt = stmt.where(ViewPo.country.like("%" + str(view.country) + "%"))
 
-
-
             if view.actors:
                 stmt = stmt.where(ViewPo.actors.like("%" + str(view.actors) + "%"))
-
-
-
-
 
             _params = getattr(view, "params", {}) or {}
             begin_val = _params.get("beginCreateTime")
@@ -82,7 +60,6 @@ class ViewMapper:
                 stmt = stmt.where(ViewPo.create_time >= begin_val)
             if end_val is not None:
                 stmt = stmt.where(ViewPo.create_time <= end_val)
-
 
             if "criterian_meta" in g and g.criterian_meta.page:
                 g.criterian_meta.page.stmt = stmt
@@ -93,7 +70,6 @@ class ViewMapper:
             print(f"查询用户浏览列表出错: {e}")
             return []
 
-    
     @staticmethod
     def select_view_by_id(id: int) -> View:
         """
@@ -111,7 +87,6 @@ class ViewMapper:
         except Exception as e:
             print(f"根据ID查询用户浏览出错: {e}")
             return None
-    
 
     @staticmethod
     def insert_view(view: View) -> int:
@@ -148,7 +123,6 @@ class ViewMapper:
             print(f"新增用户浏览出错: {e}")
             return 0
 
-    
     @staticmethod
     def update_view(view: View) -> int:
         """
@@ -161,7 +135,7 @@ class ViewMapper:
             int: 更新的记录数
         """
         try:
-            
+
             existing = db.session.get(ViewPo, view.id)
             if not existing:
                 return 0
@@ -180,7 +154,7 @@ class ViewMapper:
             existing.create_time = view.create_time
             db.session.commit()
             return 1
-            
+
         except Exception as e:
             db.session.rollback()
             print(f"修改用户浏览出错: {e}")
@@ -206,4 +180,38 @@ class ViewMapper:
             db.session.rollback()
             print(f"批量删除用户浏览出错: {e}")
             return 0
-    
+
+    @staticmethod
+    def select_view_by_movie_id_and_date(movie_id: int, user_id: int, target_date: datetime):
+        """
+        根据用户和时间
+        Args:
+            movie_id:
+            user_id:
+            target_date:
+
+        Returns:
+                    """
+
+        try:
+            # 如果没有提供目标日期，则使用今天
+            if target_date is None:
+                target_date = date.today()
+
+            # 将年月日转换为当天的开始时间(00:00:00)和结束时间(23:59:59)
+            start_of_day = datetime.combine(target_date, datetime.min.time())
+            end_of_day = datetime.combine(target_date, datetime.max.time())
+
+            stmt = select(ViewPo).where(
+                ViewPo.movie_id == movie_id,
+                ViewPo.user_id == user_id,
+                # 按年月日范围查询评论
+                ViewPo.create_time >= start_of_day,
+                ViewPo.create_time <= end_of_day
+            )
+            result = db.session.execute(stmt).scalars().all()
+            return [View.model_validate(item) for item in result] if result else []
+        except Exception as e:
+            print(f"根据电影ID查询影评信息表出错: {e}")
+            return []
+        pass
