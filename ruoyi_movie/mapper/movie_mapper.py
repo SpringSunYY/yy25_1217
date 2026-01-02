@@ -4,7 +4,7 @@
 # @Time    : 2025-12-21 18:49:53
 
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from flask import g
 from sqlalchemy import select, delete, and_, or_, desc, asc
@@ -82,7 +82,6 @@ class MovieMapper:
             print(f"查询电影信息表列表出错: {e}")
             return []
 
-
     @staticmethod
     def select_movie_by_id(id: int) -> Movie:
         """
@@ -102,7 +101,7 @@ class MovieMapper:
             return None
 
     @staticmethod
-    def select_movie_by_movie_id(movie_id: int) -> Movie:
+    def select_movie_by_movie_id(movie_id: int) -> Optional[Movie]:
         """
         根据电影ID查询电影信息表
 
@@ -119,7 +118,6 @@ class MovieMapper:
         except Exception as e:
             print(f"根据电影ID查询电影信息表出错: {e}")
             return None
-
 
     @staticmethod
     def insert_movie(movie: Movie) -> int:
@@ -164,7 +162,6 @@ class MovieMapper:
             db.session.rollback()
             print(f"新增电影信息表出错: {e}")
             return 0
-
 
     @staticmethod
     def update_movie(movie: Movie) -> int:

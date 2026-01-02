@@ -30,6 +30,15 @@ export function addLike(data) {
   })
 }
 
+//取消点赞
+export function cancelLike(data){
+  return request({
+    url: '/movie/like/cancel',
+    method: 'post',
+    data: data
+  })
+}
+
 // 修改用户点赞表
 export function updateLike(data) {
   return request({

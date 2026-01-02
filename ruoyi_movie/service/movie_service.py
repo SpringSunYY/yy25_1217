@@ -9,11 +9,13 @@ from typing import List
 
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
+from ruoyi_common.utils.security_util import get_user_id
 from ruoyi_movie.domain.entity import Movie
 from ruoyi_movie.domain.entity.movie import MovieDetailDto
-from ruoyi_movie.mapper import MovieReviewMapper
+from ruoyi_movie.mapper import MovieReviewMapper, LikeMapper
 from ruoyi_movie.mapper.movie_mapper import MovieMapper
 from ruoyi_movie.service.view_service import ViewService
+
 
 class MovieService:
     """电影信息表服务类"""
@@ -161,10 +163,16 @@ class MovieService:
         movie_info = MovieMapper.select_movie_by_movie_id(movie_id)
 
         ##如果电影信息存在
-        if movie_info:
+        if movie_info is not None:
             movie_detail.movie = movie_info
             ##添加用户浏览记录
             ViewService.add_view(movie_info)
+            ##查询用户是否点赞
+            likes = LikeMapper.select_like_by_movie_id_and_user_id(movie_id, get_user_id())
+            if likes:
+                movie_detail.is_liked = True
+            else:
+                movie_detail.is_liked = False
         movie_reviews = MovieReviewMapper.select_movie_review_by_movie_id(movie_id)
         if movie_reviews:
             movie_detail.movie_review = movie_reviews

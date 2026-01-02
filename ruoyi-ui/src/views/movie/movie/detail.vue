@@ -156,6 +156,7 @@
 </template>
 <script>
 import {getMovieDetail} from "@/api/movie/movie";
+import {addLike, cancelLike} from "@/api/movie/like";
 
 export default {
   name: "MovieDetail",
@@ -167,13 +168,13 @@ export default {
     }
   },
   computed: {
-    // 长评（假设 type 为 'long' 或包含 '长评'）
+    // 长评
     longReviews() {
-      return this.movieReview.filter(review => review.type === 'long' || review.type?.includes('长'));
+      return this.movieReview.filter(review => review.type?.includes('长评'));
     },
-    // 短评（假设 type 为 'short' 或包含 '短评'）
+    // 短评
     shortReviews() {
-      return this.movieReview.filter(review => review.type === 'short' || review.type?.includes('短'));
+      return this.movieReview.filter(review => review.type?.includes('长评'));
     }
   },
   created() {
@@ -188,8 +189,7 @@ export default {
         if (detailData) {
           this.movie = detailData.movie || {};
           this.movieReview = detailData.movieReview || [];
-          console.log('电影数据:', this.movie)
-          console.log('评论数据:', this.movieReview)
+          this.isLiked = detailData.isLiked || false;
         } else {
           console.error('API返回数据格式错误，没有data字段')
           this.$message.error('数据格式错误')
@@ -208,9 +208,11 @@ export default {
     handleLike() {
       this.isLiked = !this.isLiked;
       this.$message.success(this.isLiked ? '已点赞' : '已取消点赞');
-      // 模拟后端API调用
-      console.log('点赞状态:', this.isLiked);
-      // TODO: 调用后端API保存点赞状态
+      if (this.isLiked) {
+        addLike({movieId: this.movie.movieId})
+      } else {
+        cancelLike({movieId: this.movie.movieId})
+      }
     },
 
     // 格式化日期
@@ -240,13 +242,6 @@ export default {
         this.$message.warning('暂无详情页链接');
       }
     },
-
-    // 计算星星数量（基于10分制转换为5星制）
-    getStars(rating) {
-      if (!rating) return 0;
-      // 将10分制转换为5星制
-      return Math.round((rating / 10) * 5);
-    }
   }
 }
 </script>

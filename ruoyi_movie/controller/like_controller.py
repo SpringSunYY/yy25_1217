@@ -71,6 +71,22 @@ def add_like(dto: Like):
         return AjaxResponse.from_success(msg='新增成功')
     return AjaxResponse.from_error(code=HttpStatus.ERROR, msg='新增失败')
 
+@gen.route('/cancel', methods=['POST'])
+@BodyValidator()
+@PreAuthorize(HasPerm('movie:like:add'))
+@Log(title='用户点赞表管理', business_type=BusinessType.INSERT)
+@JsonSerializer()
+def cancel_like(dto: Like):
+    """取消用户点赞表"""
+    like_entity = Like()
+    # 转换PO到Entity对象
+    for attr in dto.model_fields.keys():
+        if hasattr(like_entity, attr):
+            setattr(like_entity, attr, getattr(dto, attr))
+    result = like_service.cancel_like(like_entity)
+    if result > 0:
+        return AjaxResponse.from_success(msg='取消成功')
+    return AjaxResponse.from_error(code=HttpStatus.ERROR, msg='取消失败')
 
 @gen.route('', methods=['PUT'])
 @BodyValidator()

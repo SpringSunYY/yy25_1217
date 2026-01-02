@@ -3,12 +3,16 @@
 # @FileName: like_service.py
 # @Time    : 2025-12-21 18:49:53
 
+from datetime import datetime
 from typing import List
 
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
+from ruoyi_common.utils.security_util import get_user_id, get_username
 from ruoyi_movie.domain.entity import Like
+from ruoyi_movie.mapper import MovieMapper
 from ruoyi_movie.mapper.like_mapper import LikeMapper
+
 
 class LikeService:
     """用户点赞表服务类"""
@@ -25,7 +29,6 @@ class LikeService:
         """
         return LikeMapper.select_like_list(like)
 
-    
     def select_like_by_id(self, id: int) -> Like:
         """
         根据ID查询用户点赞表
@@ -37,7 +40,6 @@ class LikeService:
             like: 用户点赞表对象
         """
         return LikeMapper.select_like_by_id(id)
-    
 
     def insert_like(self, like: Like) -> int:
         """
@@ -49,9 +51,39 @@ class LikeService:
         Returns:
             int: 插入的记录数
         """
+
+        ##先查询电影是否存在
+        movie_info = MovieMapper.select_movie_by_movie_id(like.movie_id)
+        if not movie_info:
+            raise ServiceException("电影不存在")
+        now_date = datetime.now()
+        user_id = get_user_id()
+        ##如果电影存在，则附上初始值
+        like.user_id = user_id
+        like.user_name = get_username()
+        like.movie_id = movie_info.movie_id
+        like.movie_title = movie_info.title
+        like.cover_url = movie_info.cover_url
+        like.genres = movie_info.genres
+        like.directors = movie_info.directors
+        like.country = movie_info.country
+        like.actors = movie_info.actors
+        like.score = 10
+        like.create_time = now_date
         return LikeMapper.insert_like(like)
 
-    
+    def cancel_like(self, like: Like):
+        """
+        取消点赞
+        Args:
+            like:
+
+        Returns:
+        """
+        user_id = get_user_id()
+        like.user_id = user_id
+        return LikeMapper.cancel_like(like)
+
     def update_like(self, like: Like) -> int:
         """
         修改用户点赞表
@@ -63,9 +95,7 @@ class LikeService:
             int: 更新的记录数
         """
         return LikeMapper.update_like(like)
-    
 
-    
     def delete_like_by_ids(self, ids: List[int]) -> int:
         """
         批量删除用户点赞表
@@ -77,7 +107,6 @@ class LikeService:
             int: 删除的记录数
         """
         return LikeMapper.delete_like_by_ids(ids)
-    
 
     def import_like(self, like_list: List[Like], is_update: bool = False) -> str:
         """
@@ -101,7 +130,7 @@ class LikeService:
         for like in like_list:
             try:
                 display_value = like
-                
+
                 display_value = getattr(like, "id", display_value)
                 existing = None
                 if like.id is not None:
@@ -115,7 +144,7 @@ class LikeService:
                         continue
                 else:
                     result = LikeMapper.insert_like(like)
-                
+
                 if result > 0:
                     success_count += 1
                     success_msg += f"<br/> 第{success_count}条数据，操作成功：{display_value}"

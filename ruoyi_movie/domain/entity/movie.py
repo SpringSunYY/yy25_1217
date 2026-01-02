@@ -257,6 +257,11 @@ class MovieDetailDto(BaseEntity):
         Field(default=None, description="电影评论")
     ]
 
+    is_liked : Annotated[
+        Optional[bool],
+        Field(default=None, description="是否点赞")
+    ]
+
 
 # 重建模型以解决Pydantic forward reference问题
 MovieDetailDto.model_rebuild()
