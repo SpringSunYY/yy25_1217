@@ -13,7 +13,6 @@ from ruoyi_common.utils.security_util import get_user_id, get_username
 from ruoyi_movie.domain.entity import Like
 from ruoyi_movie.mapper import MovieMapper
 from ruoyi_movie.mapper.like_mapper import LikeMapper
-from ruoyi_system.domain.entity import SysConfig
 from ruoyi_system.service import SysConfigService
 
 
@@ -57,9 +56,9 @@ class LikeService:
 
         ##先查询电影是否存在
         movie_info = MovieMapper.select_movie_by_movie_id(like.movie_id)
-        if not movie_info:
+        if movie_info is None:
             raise ServiceException("电影不存在")
-        score_str= SysConfigService.select_config_by_key(ConfigConstants.MOVIE_SCORE_LIKE)
+        score_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_SCORE_LIKE)
         ##转换成数值
         score = int(score_str)
         now_date = datetime.now()
