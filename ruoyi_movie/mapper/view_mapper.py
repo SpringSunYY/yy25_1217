@@ -4,10 +4,10 @@
 # @Time    : 2025-12-21 18:49:52
 
 from typing import List
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from flask import g
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, and_
 
 from ruoyi_admin.ext import db
 from ruoyi_movie.domain.entity import View
@@ -215,4 +215,37 @@ class ViewMapper:
         except Exception as e:
             print(f"根据电影ID查询影评信息表出错: {e}")
             return []
-        pass
+
+    @staticmethod
+    def select_user_views_by_user_id(user_id: int, days: int = 30) -> List[View]:
+        """
+        根据用户ID获取最近N天的浏览记录
+
+        Args:
+            user_id (int): 用户ID
+            days (int): 最近天数，默认30天
+
+        Returns:
+            List[View]: 用户浏览记录列表
+        """
+        try:
+            # 计算时间范围
+            end_time = datetime.now()
+            start_time = end_time - timedelta(days=days)
+
+            stmt = select(ViewPo).where(
+                and_(
+                    ViewPo.user_id == user_id,
+                    ViewPo.create_time >= start_time,
+                    ViewPo.create_time <= end_time
+                )
+            ).order_by(ViewPo.create_time.desc())
+
+            result = db.session.execute(stmt).scalars().all()
+
+            return [View.model_validate(item) for item in result] if result else []
+        except Exception as e:
+            print(f"获取用户浏览记录出错: {e}")
+            import traceback
+            traceback.print_exc()
+            return []

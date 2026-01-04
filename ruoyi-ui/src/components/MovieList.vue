@@ -100,9 +100,6 @@
         </div>
       </div>
 
-      <!-- 无限滚动加载触发器 -->
-      <div v-if="hasMore" ref="loadTrigger" class="load-trigger"></div>
-
       <!-- 加载完毕 -->
       <div v-else-if="movieList.length > 0" class="load-finished">
         <span class="finished-text">没有更多电影了</span>
@@ -151,54 +148,13 @@ export default {
   },
   data() {
     return {
-      // 无限滚动观察器
-      observer: null
+      // 无限滚动观察器由父组件管理
     }
   },
   mounted() {
-    this.setupIntersectionObserver()
-  },
-  beforeDestroy() {
-    if (this.observer) {
-      this.observer.disconnect()
-      this.observer = null
-    }
+    // IntersectionObserver现在由父组件处理
   },
   methods: {
-    // 设置无限滚动观察器
-    setupIntersectionObserver() {
-      if (!window.IntersectionObserver) {
-        console.warn('IntersectionObserver not supported')
-        return
-      }
-
-      // 如果已存在观察器，先断开
-      if (this.observer) {
-        this.observer.disconnect()
-      }
-
-      this.observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting && this.hasMore && !this.loading) {
-              this.$emit('load-more')
-            }
-          })
-        },
-        {
-          root: null,
-          rootMargin: '100px',
-          threshold: 0.1
-        }
-      )
-
-      // 延迟开始观察，确保DOM已渲染
-      this.$nextTick(() => {
-        if (this.$refs.loadTrigger) {
-          this.observer.observe(this.$refs.loadTrigger)
-        }
-      })
-    },
 
     // 处理电影点击
     handleMovieClick(movie) {

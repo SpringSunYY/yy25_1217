@@ -12,6 +12,9 @@ from sqlalchemy import select, update, delete
 from ruoyi_admin.ext import db
 from ruoyi_movie.domain.entity import Recommend
 from ruoyi_movie.domain.po import RecommendPo
+from ruoyi_movie.mapper.view_mapper import ViewMapper
+from ruoyi_movie.mapper.like_mapper import LikeMapper
+from ruoyi_movie.mapper.movie_mapper import MovieMapper
 
 class RecommendMapper:
     """用户推荐Mapper"""
@@ -159,3 +162,84 @@ class RecommendMapper:
             db.session.rollback()
             print(f"批量删除用户推荐出错: {e}")
             return 0
+
+    @classmethod
+    def select_user_views_by_user_id(cls, user_id: int, days: int = 30):
+        """
+        根据用户ID获取最近N天的浏览记录
+
+        Args:
+            user_id (int): 用户ID
+            days (int): 最近天数，默认30天
+
+        Returns:
+            List[View]: 用户浏览记录列表
+        """
+        # 直接调用ViewMapper的方法
+        return ViewMapper.select_user_views_by_user_id(user_id, days)
+
+    @classmethod
+    def select_user_likes_by_user_id(cls, user_id: int, days: int = 30):
+        """
+        根据用户ID获取最近N天的点赞记录
+
+        Args:
+            user_id (int): 用户ID
+            days (int): 最近天数，默认30天
+
+        Returns:
+            List[Like]: 用户点赞记录列表
+        """
+        # 直接调用LikeMapper的方法
+        return LikeMapper.select_user_likes_by_user_id(user_id, days)
+
+    @classmethod
+    def select_similar_movies(cls, genres: str = None, directors: str = None,
+                             country: str = None, actors: str = None,
+                             exclude_movie_ids: List[int] = None,
+                             limit: int = 20):
+        """
+        根据维度信息查找相似的电影
+
+        Args:
+            genres (str): 类型
+            directors (str): 导演
+            country (str): 国家地区
+            actors (str): 主演
+            exclude_movie_ids (List[int]): 排除的电影ID列表
+            limit (int): 返回数量限制
+
+        Returns:
+            List[Movie]: 相似电影列表
+        """
+        # 直接调用MovieMapper的方法
+        return MovieMapper.select_similar_movies_by_dimensions(
+            genres=genres,
+            directors=directors,
+            country=country,
+            actors=actors,
+            exclude_movie_ids=exclude_movie_ids,
+            limit=limit
+        )
+
+    @classmethod
+    def select_user_recommend_history(cls, user_id: int) -> Optional[Recommend]:
+        """
+        获取用户最新的推荐历史
+
+        Args:
+            user_id (int): 用户ID
+
+        Returns:
+            Optional[Recommend]: 最新的推荐记录
+        """
+        try:
+            stmt = select(RecommendPo).where(
+                RecommendPo.user_id == user_id
+            ).order_by(RecommendPo.create_time.desc()).limit(1)
+
+            result = db.session.execute(stmt).scalar_one_or_none()
+            return Recommend.model_validate(result) if result else None
+        except Exception as e:
+            print(f"获取用户推荐历史出错: {e}")
+            return None

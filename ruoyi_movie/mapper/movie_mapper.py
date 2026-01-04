@@ -10,6 +10,7 @@ from flask import g
 from sqlalchemy import select, delete, and_, or_, desc, asc
 
 from ruoyi_admin.ext import db
+from ruoyi_common.utils.base import LogUtil
 from ruoyi_movie.domain.entity import Movie
 from ruoyi_movie.domain.po import MoviePo
 
@@ -378,6 +379,91 @@ class MovieMapper:
             }
 
     @staticmethod
+    def select_similar_movies_by_dimensions(genres: str = None, directors: str = None,
+                                          country: str = None, actors: str = None,
+                                          exclude_movie_ids: List[int] = None,
+                                          limit: Optional[int] = 20) -> List[Movie]:
+        """
+        根据维度信息查找相似的电影（用于推荐算法）
+
+        Args:
+            genres (str): 类型
+            directors (str): 导演
+            country (str): 国家地区
+            actors (str): 主演
+            exclude_movie_ids (List[int]): 排除的电影ID列表
+            limit (int): 返回数量限制
+
+        Returns:
+            List[Movie]: 相似电影列表
+        """
+        try:
+            stmt = select(MoviePo)
+
+            # 构建相似度条件
+            conditions = []
+
+            if genres:
+                # 类型匹配（支持多个类型）
+                genre_list = [g.strip() for g in genres.split('/') if g.strip()]
+                genre_conditions = []
+                for genre in genre_list:
+                    genre_conditions.append(MoviePo.genres.like(f"%{genre}%"))
+                if genre_conditions:
+                    conditions.append(or_(*genre_conditions))
+
+            if directors:
+                # 导演匹配
+                director_list = [d.strip() for d in directors.split('/') if d.strip()]
+                director_conditions = []
+                for director in director_list:
+                    director_conditions.append(MoviePo.directors.like(f"%{director}%"))
+                if director_conditions:
+                    conditions.append(or_(*director_conditions))
+
+            if country:
+                # 国家地区匹配
+                country_list = [c.strip() for c in country.split('/') if c.strip()]
+                country_conditions = []
+                for country_item in country_list:
+                    country_conditions.append(MoviePo.country.like(f"%{country_item}%"))
+                if country_conditions:
+                    conditions.append(or_(*country_conditions))
+
+            if actors:
+                # 主演匹配
+                actor_list = [a.strip() for a in actors.split('/') if a.strip()]
+                actor_conditions = []
+                for actor in actor_list:
+                    actor_conditions.append(MoviePo.actors.like(f"%{actor}%"))
+                if actor_conditions:
+                    conditions.append(or_(*actor_conditions))
+
+            # 如果有条件，则应用条件；如果没有条件，返回热门电影
+            if conditions:
+                stmt = stmt.where(or_(*conditions))
+
+            # 排除指定电影
+            if exclude_movie_ids:
+                stmt = stmt.where(MoviePo.movie_id.not_in(exclude_movie_ids))
+
+            # 按评分和观看人数排序（热门电影推荐）
+            stmt = stmt.order_by(
+                MoviePo.rating.desc(),
+                MoviePo.view_count.desc()
+            )
+
+            # 只有当limit不为None时才应用限制
+            if limit is not None:
+                stmt = stmt.limit(limit)
+
+            result = db.session.execute(stmt).scalars().all()
+            return [Movie.model_validate(item) for item in result] if result else []
+        except Exception as e:
+            print(f"查找相似电影出错: {e}")
+            return []
+
+    @staticmethod
     def delete_movie_by_ids(ids: List[int]) -> int:
         """
         批量删除电影信息表
@@ -397,3 +483,34 @@ class MovieMapper:
             db.session.rollback()
             print(f"批量删除电影信息表出错: {e}")
             return 0
+
+    @classmethod
+    def select_movies_by_ids(cls, movie_ids: List[int]) -> List[Movie]:
+        """
+        根据电影ID列表批量查询电影信息
+
+        Args:
+            movie_ids (List[int]): 电影ID列表
+
+        Returns:
+            List[Movie]: 电影对象列表
+        """
+        if not movie_ids:
+            return []
+
+        try:
+            # 使用SQLAlchemy的select语句
+            stmt = select(MoviePo).where(MoviePo.movie_id.in_(movie_ids))
+
+            # 保持ID顺序
+            id_to_index = {movie_id: index for index, movie_id in enumerate(movie_ids)}
+            result = db.session.execute(stmt).scalars().all()
+
+            # 转换为Movie实体并按原始顺序排序
+            movies = [Movie.model_validate(item) for item in result] if result else []
+            movies.sort(key=lambda x: id_to_index.get(x.movie_id, len(movie_ids)))
+
+            return movies
+        except Exception as e:
+            LogUtil.logger.error(f"批量查询电影信息失败: {e}")
+            return []

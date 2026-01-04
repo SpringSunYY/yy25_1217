@@ -47,3 +47,15 @@ export function delRecommend(id) {
     method: 'delete'
   })
 }
+
+// 获取用户推荐内容
+export function getUserRecommendation(pageNum = 1, pageSize = 10) {
+  return request({
+    url: '/movie/recommend/content',
+    method: 'get',
+    params: {
+      pageNum: pageNum,
+      pageSize: pageSize
+    }
+  })
+}

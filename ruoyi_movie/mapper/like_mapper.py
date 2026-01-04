@@ -4,10 +4,10 @@
 # @Time    : 2025-12-21 18:49:53
 
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import g
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, and_
 
 from ruoyi_admin.ext import db
 from ruoyi_movie.domain.entity import Like
@@ -229,3 +229,37 @@ class LikeMapper:
         except Exception as e:
             print(f"根据电影ID和用户ID查询用户点赞表出错: {e}")
             return None
+
+    @staticmethod
+    def select_user_likes_by_user_id(user_id: int, days: int = 30) -> List[Like]:
+        """
+        根据用户ID获取最近N天的点赞记录
+
+        Args:
+            user_id (int): 用户ID
+            days (int): 最近天数，默认30天
+
+        Returns:
+            List[Like]: 用户点赞记录列表
+        """
+        try:
+            # 计算时间范围
+            end_time = datetime.now()
+            start_time = end_time - timedelta(days=days)
+
+            stmt = select(LikePo).where(
+                and_(
+                    LikePo.user_id == user_id,
+                    LikePo.create_time >= start_time,
+                    LikePo.create_time <= end_time
+                )
+            ).order_by(LikePo.create_time.desc())
+
+            result = db.session.execute(stmt).scalars().all()
+
+            return [Like.model_validate(item) for item in result] if result else []
+        except Exception as e:
+            print(f"获取用户点赞记录出错: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
