@@ -27,11 +27,6 @@
 
       <!-- 无限滚动加载触发器 -->
       <div v-if="hasMore" ref="loadTrigger" class="load-trigger"></div>
-
-      <!-- 加载完毕 -->
-      <div v-else-if="recommendations.length > 0" class="load-finished">
-        <span class="finished-text">没有更多电影了</span>
-      </div>
     </div>
 
   </div>
@@ -60,7 +55,7 @@ export default {
       // 分页参数
       pageParams: {
         pageNum: 1,
-        pageSize: 20
+        pageSize: 50
       },
       // 滚动位置保存
       savedScrollTop: 0,

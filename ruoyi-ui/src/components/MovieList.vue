@@ -101,7 +101,7 @@
       </div>
 
       <!-- 加载完毕 -->
-      <div v-else-if="movieList.length > 0" class="load-finished">
+      <div v-if="movieList.length >=total" class="load-finished">
         <span class="finished-text">没有更多电影了</span>
       </div>
     </el-card>

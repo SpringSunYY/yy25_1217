@@ -9,14 +9,19 @@ from collections import defaultdict, Counter
 import math
 import json
 
+from ruoyi_common.constant import ConfigConstants
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
+from ruoyi_common.utils.security_util import get_username
 from ruoyi_movie.domain.entity import Recommend, View, Like, Movie
 from ruoyi_movie.mapper.recommend_mapper import RecommendMapper
 from ruoyi_movie.mapper.movie_mapper import MovieMapper
+from ruoyi_system.service import SysConfigService
+
 
 class RecommendService:
     """用户推荐服务类"""
+
     @classmethod
     def select_recommend_list(cls, recommend: Recommend) -> List[Recommend]:
         """
@@ -29,7 +34,6 @@ class RecommendService:
             List[recommend]: 用户推荐列表
         """
         return RecommendMapper.select_recommend_list(recommend)
-
 
     @classmethod
     def select_recommend_by_id(cls, id: int) -> Optional[Recommend]:
@@ -57,7 +61,6 @@ class RecommendService:
         """
         return RecommendMapper.insert_recommend(recommend)
 
-
     @classmethod
     def update_recommend(cls, recommend: Recommend) -> int:
         """
@@ -70,8 +73,6 @@ class RecommendService:
             int: 更新的记录数
         """
         return RecommendMapper.update_recommend(recommend)
-
-
 
     @classmethod
     def delete_recommend_by_ids(cls, ids: List[int]) -> int:
@@ -146,11 +147,11 @@ class RecommendService:
 
     @classmethod
     def generate_recommendation_for_user(cls, user_id: int, user_name: str = None,
-                                       genres_weight: float = 0.3,
-                                       directors_weight: float = 0.25,
-                                       country_weight: float = 0.2,
-                                       actors_weight: float = 0.25,
-                                       time_decay_factor: float = 0.9) -> Optional[Recommend]:
+                                         genres_weight: float = 0.3,
+                                         directors_weight: float = 0.25,
+                                         country_weight: float = 0.2,
+                                         actors_weight: float = 0.25,
+                                         time_decay_factor: float = 0.9) -> Optional[Recommend]:
         """
         为用户生成个性化推荐（便捷方法）
 
@@ -175,15 +176,15 @@ class RecommendService:
 
         return cls.generate_user_recommendation(
             user_id=user_id,
-            user_name=user_name,  # 传递用户名用于保存记录
+            user_name=user_name,
             weights=weights,
             time_decay_factor=time_decay_factor
         )
 
     @classmethod
     def generate_user_recommendation(cls, user_id: int, user_name: str = None,
-                                   weights: Dict[str, float] = None,
-                                   time_decay_factor: float = 0.9) -> Optional[Recommend]:
+                                     weights: Dict[str, float] = None,
+                                     time_decay_factor: float = 0.9) -> Optional[Recommend]:
         """
         生成用户个性化推荐
 
@@ -200,10 +201,10 @@ class RecommendService:
             # 设置默认权重
             if weights is None:
                 weights = {
-                    'genres': 0.3,     # 类型权重
-                    'directors': 0.25, # 导演权重
-                    'country': 0.2,    # 国家地区权重
-                    'actors': 0.25     # 主演权重
+                    'genres': 0.3,  # 类型权重
+                    'directors': 0.25,  # 导演权重
+                    'country': 0.2,  # 国家地区权重
+                    'actors': 0.25  # 主演权重
                 }
 
             # 获取用户最近30天的浏览和点赞记录
@@ -298,7 +299,7 @@ class RecommendService:
 
     @classmethod
     def _calculate_user_preference(cls, user_views: List[View], user_likes: List[Like],
-                                  time_decay_factor: float) -> Dict[str, Dict[str, float]]:
+                                   time_decay_factor: float) -> Dict[str, Dict[str, float]]:
         """
         计算用户偏好向量
 
@@ -319,12 +320,19 @@ class RecommendService:
 
         now = datetime.now()
 
+        like_score_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_SCORE_LIKE)
+        ##转换成数值
+        like_score = int(like_score_str)
+
+        view_score_str= SysConfigService.select_config_by_key(ConfigConstants.MOVIE_SCORE_VIEW)
+        ##转换成数值
+        view_score = int(view_score_str)
         # 处理浏览记录
         for view in user_views:
             # 计算时间衰减权重
             time_weight = cls._calculate_time_weight(view.create_time, now, time_decay_factor)
             # 浏览权重设为1.0，点赞权重设为2.0
-            score_weight = 1.0
+            score_weight = view.score or view_score
 
             total_weight = time_weight * score_weight
 
@@ -336,7 +344,7 @@ class RecommendService:
             # 计算时间衰减权重
             time_weight = cls._calculate_time_weight(like.create_time, now, time_decay_factor)
             # 点赞权重更高
-            score_weight = 2.0
+            score_weight = like.score or like_score
 
             total_weight = time_weight * score_weight
 
@@ -347,7 +355,7 @@ class RecommendService:
 
     @classmethod
     def _calculate_time_weight(cls, create_time: datetime, now: datetime,
-                              decay_factor: float) -> float:
+                               decay_factor: float) -> float:
         """
         计算时间衰减权重
 
@@ -371,7 +379,7 @@ class RecommendService:
 
     @classmethod
     def _accumulate_preference(cls, preference: Dict[str, Dict[str, float]],
-                              record: View | Like, weight: float):
+                               record: View | Like, weight: float):
         """
         累加用户偏好
 
@@ -406,8 +414,8 @@ class RecommendService:
 
     @classmethod
     def _generate_recommendations(cls, user_preference: Dict[str, Dict[str, float]],
-                                weights: Dict[str, float], user_views: List[View],
-                                user_likes: List[Like], top_n: int = 500) -> List[Tuple[Movie, float]]:
+                                  weights: Dict[str, float], user_views: List[View],
+                                  user_likes: List[Like], top_n: int = 500) -> List[Tuple[Movie, float]]:
         """
         生成推荐电影列表
 
@@ -431,7 +439,8 @@ class RecommendService:
                 exclude_movie_ids.add(like.movie_id)
 
         # 获取候选电影
-        candidate_movies = cls._get_candidate_movies(user_preference, exclude_movie_ids, min(top_n * 3, 1000))  # 最多获取1000个候选
+        candidate_movies = cls._get_candidate_movies(user_preference, exclude_movie_ids,
+                                                     min(top_n * 3, 1000))  # 最多获取1000个候选
 
         # 计算相似度分数
         movie_scores = []
@@ -447,7 +456,7 @@ class RecommendService:
 
     @classmethod
     def _get_candidate_movies(cls, user_preference: Dict[str, Dict[str, float]],
-                            exclude_movie_ids: set, limit: int) -> List[Movie]:
+                              exclude_movie_ids: set, limit: int) -> List[Movie]:
         """
         获取候选电影
 
@@ -501,7 +510,7 @@ class RecommendService:
 
     @classmethod
     def _get_all_candidate_movies(cls, user_preference: Dict[str, Dict[str, float]],
-                                exclude_movie_ids: set) -> List[Tuple[Movie, float]]:
+                                  exclude_movie_ids: set) -> List[Tuple[Movie, float]]:
         """
         获取所有可能的候选电影（尽可能多）
 
@@ -546,7 +555,8 @@ class RecommendService:
         # 如果没有找到匹配的电影，或者匹配电影太少，补充热门电影
         if len(candidates) < 100:
             try:
-                popular_movies = cls._get_all_popular_movies(exclude_movie_ids.union({movie.movie_id for movie, _ in candidates}))
+                popular_movies = cls._get_all_popular_movies(
+                    exclude_movie_ids.union({movie.movie_id for movie, _ in candidates}))
                 candidates.extend(popular_movies)
             except Exception as e:
                 LogUtil.logger.warning(f"获取热门电影时出错: {e}")
@@ -636,8 +646,8 @@ class RecommendService:
 
     @classmethod
     def _calculate_similarity_score(cls, movie: Movie,
-                                  user_preference: Dict[str, Dict[str, float]],
-                                  weights: Dict[str, float]) -> float:
+                                    user_preference: Dict[str, Dict[str, float]],
+                                    weights: Dict[str, float]) -> float:
         """
         计算电影与用户偏好的相似度分数（优化版）
 
@@ -745,7 +755,7 @@ class RecommendService:
 
     @classmethod
     def _calculate_dimension_similarity(cls, movie_values: str,
-                                     user_preference: Dict[str, float]) -> float:
+                                        user_preference: Dict[str, float]) -> float:
         """
         计算单个维度的相似度分数（优化版）
 
@@ -796,8 +806,8 @@ class RecommendService:
 
     @classmethod
     def _build_recommend_content(cls, recommended_movies: List[Tuple[Movie, float]],
-                               user_preference: Dict[str, Dict[str, float]] = None,
-                               total_count: int = 0) -> str:
+                                 user_preference: Dict[str, Dict[str, float]] = None,
+                                 total_count: int = 0) -> str:
         """
         构建推荐内容
 
@@ -866,60 +876,157 @@ class RecommendService:
         return json.dumps(result, ensure_ascii=False)
 
     @classmethod
-    def get_recommend_movies_for_user(cls, user_id: int) -> Tuple[List[Tuple[int, float]], int]:
+    def _should_generate_new_recommendations(cls, user_id: int) -> bool:
         """
-        从数据库获取用户的推荐电影列表（电影ID和相似度分数）
+        判断是否应该生成新的推荐模型
 
         Args:
             user_id (int): 用户ID
 
         Returns:
-            List[Tuple[int, float]]: [(movie_id, similarity_score), ...] 按相似度降序排序
+            bool: 是否需要生成新推荐
         """
         try:
+            # 检查用户是否有推荐记录
+            recommend = RecommendMapper.select_user_recommend_history(user_id)
+            if recommend is None:
+                return True  # 没有推荐记录，需要生成
+
+            # 检查用户最近7天的交互数据量（浏览或点赞任一超过5条即可生成新推荐）
+            from ruoyi_movie.mapper.view_mapper import ViewMapper
+            from ruoyi_movie.mapper.like_mapper import LikeMapper
+
+            user_views = ViewMapper.select_user_views_by_user_id(user_id, days=7)  # 最近7天
+            user_likes = LikeMapper.select_user_likes_by_user_id(user_id, days=7)  # 最近7天
+
+            # 示例SQL: SELECT * FROM tb_view WHERE user_id = ? AND create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            # 示例SQL: SELECT * FROM tb_like WHERE user_id = ? AND create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+
+            # 浏览或点赞任一超过5条即可重新生成推荐
+            return len(user_views) >= 5 or len(user_likes) >= 5
+
+        except Exception as e:
+            LogUtil.logger.error(f"检查用户 {user_id} 是否需要新推荐时出错: {e}")
+            return False
+
+    @classmethod
+    def _generate_new_recommendations_if_needed(cls, user_id: int) -> None:
+        """
+        如果需要，生成新的推荐模型
+
+        Args:
+            user_id (int): 用户ID
+        """
+        try:
+            user_name = get_username()
+            cls.generate_recommendation_for_user(
+                user_id=user_id,
+                user_name=user_name,
+                genres_weight=0.3,
+                directors_weight=0.25,
+                country_weight=0.2,
+                actors_weight=0.9,
+                time_decay_factor=0.9
+            )
+            LogUtil.logger.info(f"为用户 {user_id} 生成了新的推荐模型")
+        except Exception as e:
+            LogUtil.logger.error(f"为用户 {user_id} 生成新推荐模型失败: {e}")
+
+    @classmethod
+    def get_user_recommendations_paginated(cls, user_id: int, page_num: int = 1, page_size: int = 10) -> Dict:
+        """
+        获取用户的分页推荐内容，自动处理推荐模型的生成和更新
+
+        Args:
+            user_id (int): 用户ID
+            page_num (int): 页码，默认1
+            page_size (int): 每页数量，默认10
+
+        Returns:
+            Dict: 包含rows和total的字典
+        """
+        try:
+            # 第一页时检查是否需要生成/更新推荐模型
+            if page_num == 1:
+                should_generate = cls._should_generate_new_recommendations(user_id)
+                if should_generate:
+                    cls._generate_new_recommendations_if_needed(user_id)
+
             # 获取用户最新的推荐记录
             recommend = RecommendMapper.select_user_recommend_history(user_id)
             if not recommend or not recommend.content:
-                LogUtil.logger.info(f"用户 {user_id} 没有推荐记录")
-                return [], 0
+                LogUtil.logger.info(f"用户 {user_id} 没有推荐记录，返回空结果")
+                return {'rows': [], 'total': 0}
 
             # 解析存储的电影ID和分数列表
             try:
                 content_data = json.loads(recommend.content)
             except json.JSONDecodeError as json_error:
-                LogUtil.logger.error(f"用户 {user_id} 的推荐内容JSON解析失败: {json_error}, content长度: {len(recommend.content)}")
-                # 尝试清理可能的特殊字符
-                try:
-                    cleaned_content = recommend.content.replace('\x00', '').replace('\ufeff', '')
-                    content_data = json.loads(cleaned_content)
-                except:
-                    LogUtil.logger.error(f"用户 {user_id} 的推荐内容JSON解析失败，即使清理后也失败")
-                    return []
+                LogUtil.logger.error(f"用户 {user_id} 的推荐内容JSON解析失败: {json_error}")
+                return {'rows': [], 'total': 0}
 
             movie_scores = content_data.get('movie_scores', [])
             total_count = content_data.get('total_count', len(movie_scores))
 
             # 确保数据格式正确
             if not isinstance(movie_scores, list):
-                LogUtil.logger.error(f"用户 {user_id} 的推荐内容格式错误: {type(movie_scores)}")
-                return [], 0
+                LogUtil.logger.error(f"用户 {user_id} 的推荐内容格式错误")
+                return {'rows': [], 'total': 0}
 
-            # 验证数据格式
+            # 验证和清理数据格式
             valid_scores = []
             for item in movie_scores:
-                if isinstance(item, list) and len(item) == 2 and isinstance(item[0], int) and isinstance(item[1], (int, float)):
+                if isinstance(item, list) and len(item) == 2 and isinstance(item[0], int) and isinstance(item[1],
+                                                                                                         (int, float)):
                     valid_scores.append((item[0], float(item[1])))
-                else:
-                    LogUtil.logger.warning(f"用户 {user_id} 的推荐数据格式无效: {item}")
 
-            # 按相似度降序排序
-            valid_scores.sort(key=lambda x: x[1], reverse=True)
+            # 分页处理
+            start_idx = (page_num - 1) * page_size
+            end_idx = start_idx + page_size
+            page_movie_scores = valid_scores[start_idx:end_idx]
 
-            # 返回包含总数的元组
-            return valid_scores, total_count
+            # 获取当前页面的电影ID
+            page_movie_ids = [movie_id for movie_id, score in page_movie_scores]
+
+            # 批量查询电影详细信息
+            rows = []
+            if page_movie_ids:
+                from ruoyi_movie.mapper.movie_mapper import MovieMapper
+                movies = MovieMapper.select_movies_by_ids(page_movie_ids)
+
+                # 创建电影ID到电影对象的映射
+                movie_dict = {movie.movie_id: movie for movie in movies}
+
+                # 直接构建推荐结果
+                for movie_id, score in page_movie_scores:
+                    movie_detail = movie_dict.get(movie_id)
+                    if not movie_detail:
+                        continue
+
+                    movie_data = {
+                        'movieId': movie_detail.movie_id or 0,
+                        'title': movie_detail.title or '',
+                        'rating': movie_detail.rating or 0.0,
+                        'genres': movie_detail.genres or '',
+                        'directors': movie_detail.directors or '',
+                        'country': movie_detail.country or '',
+                        'actors': movie_detail.actors or '',
+                        'coverUrl': movie_detail.cover_url or '',
+                        'publishYear': movie_detail.publish_year or 0,
+                        'language': movie_detail.language or '',
+                        'writers': movie_detail.writers or '',
+                        'pubDate': movie_detail.pub_date or '',
+                        'wishCount': movie_detail.wish_count or 0,
+                        'viewCount': movie_detail.view_count or 0,
+                        'reviewsCount': movie_detail.reviews_count or 0,
+                        'similarityScore': round(score, 4)
+                    }
+                    rows.append(movie_data)
+
+            return {'rows': rows, 'total': total_count}
 
         except Exception as e:
-            LogUtil.logger.error(f"获取用户 {user_id} 推荐电影列表时出错: {e}")
+            LogUtil.logger.error(f"获取用户 {user_id} 分页推荐内容时出错: {e}")
             import traceback
             LogUtil.logger.error(f"详细错误信息: {traceback.format_exc()}")
-            return [], 0
+            return {'rows': [], 'total': 0}

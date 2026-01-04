@@ -447,7 +447,7 @@ class MovieMapper:
             if exclude_movie_ids:
                 stmt = stmt.where(MoviePo.movie_id.not_in(exclude_movie_ids))
 
-            # 按评分和观看人数排序（热门电影推荐）
+            # 按评分和观看人数排序
             stmt = stmt.order_by(
                 MoviePo.rating.desc(),
                 MoviePo.view_count.desc()
