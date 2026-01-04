@@ -211,25 +211,26 @@ class RecommendService:
             user_views = RecommendMapper.select_user_views_by_user_id(user_id, days=30)
             user_likes = RecommendMapper.select_user_likes_by_user_id(user_id, days=30)
 
-            # 获取用户已浏览/点赞的电影ID，避免重复推荐
-            exclude_movie_ids = set()
+            # 用户明确表示不需要避免重复推荐，所以不排除已浏览/点赞的电影
+            # 获取用户已浏览/点赞的电影ID，用于统计
+            viewed_movie_ids = set()
             for view in user_views:
                 if view.movie_id:
-                    exclude_movie_ids.add(view.movie_id)
+                    viewed_movie_ids.add(view.movie_id)
+            liked_movie_ids = set()
             for like in user_likes:
                 if like.movie_id:
-                    exclude_movie_ids.add(like.movie_id)
+                    liked_movie_ids.add(like.movie_id)
 
             # 计算用户偏好向量（始终计算，即使没有浏览记录）
             user_preference = cls._calculate_user_preference(user_views, user_likes, time_decay_factor)
 
-            # 获取候选电影（限制数量）
-            all_candidate_movies = cls._get_all_candidate_movies(user_preference, exclude_movie_ids)
+            # 获取候选电影及其相似度分数（已使用默认权重计算）
+            all_candidate_movies = cls._get_all_candidate_movies(user_preference)
 
-            # 计算候选电影的相似度分数
+            # 重新计算相似度分数，使用实际的权重配置
             movie_scores = []
-            for movie_tuple in all_candidate_movies:
-                movie, base_score = movie_tuple  # 解包元组
+            for movie, _ in all_candidate_movies:
                 score = cls._calculate_similarity_score(movie, user_preference, weights)
                 movie_scores.append((movie, score))
 
@@ -509,59 +510,55 @@ class RecommendService:
         return candidates[:limit]  # 确保不超过限制
 
     @classmethod
-    def _get_all_candidate_movies(cls, user_preference: Dict[str, Dict[str, float]],
-                                  exclude_movie_ids: set) -> List[Tuple[Movie, float]]:
+    def _get_all_candidate_movies(cls, user_preference: Dict[str, Dict[str, float]]) -> List[Tuple[Movie, float]]:
         """
-        获取所有可能的候选电影（尽可能多）
+        获取所有可能的候选电影并计算初步相似度
 
         Args:
             user_preference (Dict[str, Dict[str, float]]): 用户偏好向量
-            exclude_movie_ids (set): 排除的电影ID
 
         Returns:
-            List[Tuple[Movie, float]]: 候选电影列表
+            List[Tuple[Movie, float]]: 候选电影列表（包含初步相似度）
         """
         candidates = []
 
-        # 从用户最偏好的维度中选择关键词
-        top_genres = sorted(user_preference['genres'].items(), key=lambda x: x[1], reverse=True)[:5]
-        top_directors = sorted(user_preference['directors'].items(), key=lambda x: x[1], reverse=True)[:3]
-        top_countries = sorted(user_preference['country'].items(), key=lambda x: x[1], reverse=True)[:3]
-        top_actors = sorted(user_preference['actors'].items(), key=lambda x: x[1], reverse=True)[:5]
-
-        # 构建搜索条件
-        genres_str = '/'.join([genre for genre, _ in top_genres]) if top_genres else None
-        directors_str = '/'.join([director for director, _ in top_directors]) if top_directors else None
-        country_str = '/'.join([country for country, _ in top_countries]) if top_countries else None
-        actors_str = '/'.join([actor for actor, _ in top_actors]) if top_actors else None
-
-        # 获取匹配的电影（限制数量，避免过度推荐）
         try:
-            matched_movies = MovieMapper.select_similar_movies_by_dimensions(
-                genres=genres_str,
-                directors=directors_str,
-                country=country_str,
-                actors=actors_str,
-                exclude_movie_ids=list(exclude_movie_ids),
-                limit=2000  # 限制候选电影数量
+            # 获取所有电影，不使用条件过滤，让相似度算法决定相关性
+            all_movies = MovieMapper.select_similar_movies_by_dimensions(
+                genres=None,  # 不设置任何条件
+                directors=None,
+                country=None,
+                actors=None,
+                exclude_movie_ids=None,  # 不排除任何电影
+                limit=None  # 获取所有电影
             )
 
-            # 将Movie对象转换为(Movie, score)元组
-            for movie in matched_movies:
-                candidates.append((movie, 0.5))  # 基础分数0.5
+            # 为每部电影计算初步相似度分数
+            weights = {
+                'genres': 0.3,
+                'directors': 0.25,
+                'country': 0.2,
+                'actors': 0.25  # 默认权重，后续会使用实际权重
+            }
+
+            for movie in all_movies:
+                # 计算相似度分数
+                similarity_score = cls._calculate_similarity_score(movie, user_preference, weights)
+                if similarity_score > 0:  # 只保留有相似度的电影
+                    candidates.append((movie, similarity_score))
+
         except Exception as e:
-            LogUtil.logger.warning(f"获取匹配电影时出错: {e}")
-
-        # 如果没有找到匹配的电影，或者匹配电影太少，补充热门电影
-        if len(candidates) < 100:
+            LogUtil.logger.warning(f"获取所有电影时出错: {e}")
+            # 如果出错，退回到热门电影
             try:
-                popular_movies = cls._get_all_popular_movies(
-                    exclude_movie_ids.union({movie.movie_id for movie, _ in candidates}))
-                candidates.extend(popular_movies)
-            except Exception as e:
-                LogUtil.logger.warning(f"获取热门电影时出错: {e}")
+                candidates = cls._get_all_popular_movies(set())
+            except Exception as e2:
+                LogUtil.logger.error(f"获取热门电影也出错: {e2}")
+                return []
 
-        return candidates
+        # 按相似度排序，返回前3000个最相关的电影
+        candidates.sort(key=lambda x: x[1], reverse=True)
+        return candidates[:3000]
 
     @classmethod
     def _get_all_popular_movies(cls, exclude_movie_ids: set = None) -> List[Tuple[Movie, float]]:
@@ -649,7 +646,7 @@ class RecommendService:
                                     user_preference: Dict[str, Dict[str, float]],
                                     weights: Dict[str, float]) -> float:
         """
-        计算电影与用户偏好的相似度分数（优化版）
+        计算电影与用户偏好的相似度分数
 
         Args:
             movie (Movie): 电影对象
@@ -662,7 +659,7 @@ class RecommendService:
         total_score = 0.0
         dimension_scores = {}
 
-        # 类型相似度 - 最重要的维度
+        # 类型相似度
         if movie.genres and 'genres' in user_preference:
             genre_score = cls._calculate_dimension_similarity(
                 movie.genres, user_preference['genres']
