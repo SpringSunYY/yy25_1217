@@ -51,10 +51,10 @@ class RecommendMapper:
             if end_val is not None:
                 stmt = stmt.where(RecommendPo.create_time <= end_val)
 
-
             if "criterian_meta" in g and g.criterian_meta.page:
                 g.criterian_meta.page.stmt = stmt
-
+            #创建时间倒叙
+            stmt = stmt.order_by(RecommendPo.create_time.desc())
             result = db.session.execute(stmt).scalars().all()
             return [Recommend.model_validate(item) for item in result] if result else []
         except Exception as e:

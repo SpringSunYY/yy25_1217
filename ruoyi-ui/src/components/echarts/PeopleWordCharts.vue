@@ -319,7 +319,7 @@ export default {
   watch: {
     chartData: {
       handler() {
-        this.initChart();
+        this.setOptions();
       },
       deep: true
     },
@@ -367,8 +367,10 @@ export default {
       if (this.chart) {
         this.chart.dispose();
       }
-
       this.chart = echarts.init(this.$refs.chartRef);
+    },
+
+    setOptions() {
       const total = this.totalValue;
 
       const option = {

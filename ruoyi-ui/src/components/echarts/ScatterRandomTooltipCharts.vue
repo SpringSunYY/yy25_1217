@@ -69,7 +69,7 @@ export default {
   watch: {
     chartData: {
       handler() {
-        this.initChart();
+        this.setOptions();
       },
       deep: true
     }
@@ -98,6 +98,9 @@ export default {
         this.chart.dispose();
       }
       this.chart = echarts.init(this.$refs.chartRef);
+      this.setOptions();
+    },
+    setOptions() {
 
       // 1. 计算总计
       this.totalSum = this.chartData.reduce((sum, item) => sum + (item.value || 0), 0);
@@ -107,7 +110,7 @@ export default {
         const percentage = ((item.value / this.totalSum) * 100).toFixed(2);
         // 气泡大小逻辑：基于占比，设定基准大小
         const symbolSize = (item.value / this.totalSum) * 700;
-        const color=generateRandomColor(this.defaultColor)
+        const color = generateRandomColor(this.defaultColor)
         return {
           name: item.name,
           // 随机位置：10-90，配合坐标轴-30到130的范围实现大边距

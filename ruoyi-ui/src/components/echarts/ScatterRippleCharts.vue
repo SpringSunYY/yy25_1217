@@ -76,9 +76,8 @@ export default {
   watch: {
     chartData: {
       handler() {
-        this.initChart();
-      }
-      ,
+        this.setOptions();
+      },
       deep: true
     }
   }
@@ -167,7 +166,9 @@ export default {
         this.chart.dispose();
       }
       this.chart = echarts.init(this.$refs.chartRef);
-
+      this.setOptions();
+    },
+    setOptions() {
       // 计算总计
       this.totalSum = this.chartData.reduce((sum, item) => sum + (item.value || 0), 0);
 
@@ -248,8 +249,7 @@ export default {
       };
 
       this.chart.setOption(option);
-    }
-    ,
+    },
 
     handleResize() {
       if (this.chart) {
@@ -257,8 +257,7 @@ export default {
       }
     }
   }
-}
-;
+};
 </script>
 
 <style scoped>

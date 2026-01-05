@@ -178,19 +178,22 @@ export default {
           }
         },
         legend: {
+          type: 'scroll',       // 开启滚动模式
           orient: 'vertical',
-          data: list.map(i => i.name),
-          left: 'right',
-          top: 'center',
-          align: 'left',
-          itemGap: 10,
+          right: '5%',          // 靠右侧
+          top: '15%',           // 顶部留白，防止顶格
+          bottom: '15%',        // 底部留白，显示翻页按钮
+          itemGap: 15,
+          icon: 'circle',
+          pageIconColor: '#0adbfa',     // 翻页箭头颜色
+          pageIconInactiveColor: '#444', // 翻页箭头不可用时颜色
+          pageTextStyle: {
+            color: '#fff'                // 翻页数字颜色 (例如 1/2)
+          },
           textStyle: {
             color: 'rgba(36, 173, 254, 1)',
             fontSize: 14,
-          },
-          itemHeight: 10,
-          itemWidth: 10,
-          icon: 'circle'
+          }
         },
         series: [{
           name: '项目分布',
