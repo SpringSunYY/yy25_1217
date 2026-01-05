@@ -269,9 +269,9 @@ class RecommendService:
             # 处理user_preference，将数值精确到两位小数
             processed_preference = {}
             for dimension, prefs in user_preference.items():
-                processed_preference[dimension] = {
-                    key: round(value, 2) for key, value in prefs.items()
-                }
+                processed_preference[dimension] = [
+                    {'name': key, 'value': round(value, 2)} for key, value in prefs.items()
+                ]
 
             # 保存推荐结果
             recommend = Recommend(
