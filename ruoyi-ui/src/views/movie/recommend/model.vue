@@ -11,6 +11,12 @@
         :chart-title="actorsStatisticsName"
       />
     </div>
+    <div class="chart-warper" style="width: 40%">
+      <ScatterRandomTooltipCharts
+        :chart-data="directorsStatisticsData"
+        :chart-title="directorsStatisticsName"
+      />
+    </div>
   </div>
 </template>
 
@@ -19,10 +25,11 @@
 import {getRecommend} from "@/api/movie/recommend";
 import PieGradientTooltipCharts from "@/components/echarts/PieGradientTooltipCharts.vue";
 import PeopleWordCharts from "@/components/echarts/PeopleWordCharts.vue";
+import ScatterRandomTooltipCharts from "@/components/echarts/ScatterRandomTooltipCharts.vue";
 
 export default {
   name: "RecommendModel",
-  components: {PeopleWordCharts, PieGradientTooltipCharts},
+  components: {ScatterRandomTooltipCharts, PeopleWordCharts, PieGradientTooltipCharts},
   data() {
     return {
       recommend: {},
@@ -31,7 +38,10 @@ export default {
       genresStatisticsName: '剧情模型',
 
       actorsStatisticsData: [],
-      actorsStatisticsName: '演员模型'
+      actorsStatisticsName: '演员模型',
+
+      directorsStatisticsData: [],
+      directorsStatisticsName: '导演模型',
     };
   },
   created() {
@@ -69,6 +79,14 @@ export default {
         }
         if (userPreference.actors) {
           this.actorsStatisticsData = userPreference.actors.map(item => {
+            return {
+              name: item.name,
+              value: item.value
+            }
+          });
+        }
+        if (userPreference.directors) {
+          this.directorsStatisticsData = userPreference.directors.map(item => {
             return {
               name: item.name,
               value: item.value
