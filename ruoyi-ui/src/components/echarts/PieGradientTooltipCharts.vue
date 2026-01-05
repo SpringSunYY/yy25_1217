@@ -103,7 +103,7 @@ export default {
       if (!this.chart || !list || list.length === 0) return
 
       // 1. 计算总数
-      const totalValue = list.reduce((sum, item) => sum + item.value, 0)
+      const totalValue = list.reduce((sum, item) => sum + item.value, 0).toFixed(2)
 
       // 2. 构建带间隙的 ECharts data 数组
       const formattedData = []
