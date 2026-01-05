@@ -1,8 +1,15 @@
 <template>
   <div class="app-container">
     <div class="chart-warper">
-      <PieGradientTooltipCharts :chart-data="genresStatisticsData"
-                                :chart-title="genresStatisticsName"/>
+      <PieGradientTooltipCharts
+        :chart-data="genresStatisticsData"
+        :chart-title="genresStatisticsName"/>
+    </div>
+    <div class="chart-warper" style="width: 40%">
+      <PeopleWordCharts
+        :chart-data="actorsStatisticsData"
+        :chart-title="actorsStatisticsName"
+      />
     </div>
   </div>
 </template>
@@ -11,16 +18,20 @@
 
 import {getRecommend} from "@/api/movie/recommend";
 import PieGradientTooltipCharts from "@/components/echarts/PieGradientTooltipCharts.vue";
+import PeopleWordCharts from "@/components/echarts/PeopleWordCharts.vue";
 
 export default {
   name: "RecommendModel",
-  components: {PieGradientTooltipCharts},
+  components: {PeopleWordCharts, PieGradientTooltipCharts},
   data() {
     return {
       recommend: {},
       recommendId: null,
       genresStatisticsData: [],
       genresStatisticsName: '剧情模型',
+
+      actorsStatisticsData: [],
+      actorsStatisticsName: '演员模型'
     };
   },
   created() {
@@ -47,9 +58,17 @@ export default {
           return
         }
         let userPreference = modelInfo.userPreference
-        console.log(userPreference)
+        // console.log(userPreference)
         if (userPreference.genres) {
           this.genresStatisticsData = userPreference.genres.map(item => {
+            return {
+              name: item.name,
+              value: item.value
+            }
+          });
+        }
+        if (userPreference.actors) {
+          this.actorsStatisticsData = userPreference.actors.map(item => {
             return {
               name: item.name,
               value: item.value
