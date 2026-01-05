@@ -17,6 +17,12 @@
         :chart-title="directorsStatisticsName"
       />
     </div>
+    <div class="chart-warper" style="width: 40%">
+      <ScatterRippleCharts
+        :chart-data="countryStatisticsData"
+        :chart-title="countryStatisticsName"
+      />
+    </div>
   </div>
 </template>
 
@@ -26,10 +32,11 @@ import {getRecommend} from "@/api/movie/recommend";
 import PieGradientTooltipCharts from "@/components/echarts/PieGradientTooltipCharts.vue";
 import PeopleWordCharts from "@/components/echarts/PeopleWordCharts.vue";
 import ScatterRandomTooltipCharts from "@/components/echarts/ScatterRandomTooltipCharts.vue";
+import ScatterRippleCharts from "@/components/echarts/ScatterRippleCharts.vue";
 
 export default {
   name: "RecommendModel",
-  components: {ScatterRandomTooltipCharts, PeopleWordCharts, PieGradientTooltipCharts},
+  components: {ScatterRippleCharts, ScatterRandomTooltipCharts, PeopleWordCharts, PieGradientTooltipCharts},
   data() {
     return {
       recommend: {},
@@ -42,6 +49,9 @@ export default {
 
       directorsStatisticsData: [],
       directorsStatisticsName: '导演模型',
+
+      countryStatisticsData: [],
+      countryStatisticsName: '国家模型'
     };
   },
   created() {
@@ -87,6 +97,14 @@ export default {
         }
         if (userPreference.directors) {
           this.directorsStatisticsData = userPreference.directors.map(item => {
+            return {
+              name: item.name,
+              value: item.value
+            }
+          });
+        }
+        if (userPreference.country) {
+          this.countryStatisticsData = userPreference.country.map(item => {
             return {
               name: item.name,
               value: item.value

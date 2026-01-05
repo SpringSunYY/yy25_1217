@@ -4,6 +4,7 @@
 
 <script>
 import * as echarts from 'echarts';
+import {generateRandomColor} from "@/utils/ruoyi";
 
 export default {
   name: 'ScatterRandomTooltipCharts',
@@ -40,7 +41,7 @@ export default {
     },
     backgroundColor: {
       type: String,
-      default: 'rgba(36, 130, 160, 1)'
+      default: 'transparent'
     },
     // 调色盘
     defaultColor: {
@@ -106,7 +107,7 @@ export default {
         const percentage = ((item.value / this.totalSum) * 100).toFixed(2);
         // 气泡大小逻辑：基于占比，设定基准大小
         const symbolSize = (item.value / this.totalSum) * 700;
-
+        const color=generateRandomColor(this.defaultColor)
         return {
           name: item.name,
           // 随机位置：10-90，配合坐标轴-30到130的范围实现大边距
@@ -122,9 +123,9 @@ export default {
             normal: {
               color: new echarts.graphic.RadialGradient(0.5, 0.5, 1, [
                 {offset: 0.2, color: "rgba(27, 54, 72, 0.3)"},
-                {offset: 1, color: this.defaultColor[index % this.defaultColor.length]}
+                {offset: 1, color: color}
               ]),
-              borderColor: this.defaultColor[index % this.defaultColor.length],
+              borderColor: color,
               borderWidth: 2
             }
           }
