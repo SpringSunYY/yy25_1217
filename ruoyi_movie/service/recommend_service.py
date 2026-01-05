@@ -3,19 +3,21 @@
 # @FileName: recommend_service.py
 # @Time    : 2026-01-02 18:33:22
 
-from typing import List, Optional, Dict, Tuple
-from datetime import datetime, timedelta
-from collections import defaultdict, Counter
-import math
 import json
+import math
+from collections import defaultdict
+from datetime import datetime
+from typing import List, Optional, Dict, Tuple
 
 from ruoyi_common.constant import ConfigConstants
 from ruoyi_common.exception import ServiceException
+from ruoyi_common.utils import DateUtil
 from ruoyi_common.utils.base import LogUtil
 from ruoyi_common.utils.security_util import get_username
+from ruoyi_movie.controller import recommend
 from ruoyi_movie.domain.entity import Recommend, View, Like, Movie
-from ruoyi_movie.mapper.recommend_mapper import RecommendMapper
 from ruoyi_movie.mapper.movie_mapper import MovieMapper
+from ruoyi_movie.mapper.recommend_mapper import RecommendMapper
 from ruoyi_system.service import SysConfigService
 
 
@@ -237,9 +239,11 @@ class RecommendService:
             # 按相似度排序
             movie_scores.sort(key=lambda x: x[1], reverse=True)
 
-            # 只保留相似度大于阈值的电影，最多3000条
-            min_score_threshold = 0.1  # 相似度最低阈值
-            filtered_movie_scores = [item for item in movie_scores if item[1] >= min_score_threshold][:3000]
+            recommend_num_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_RECOMMEND_NUM)
+            recommend_num = int(recommend_num_str) if recommend_num_str else 3000
+            # 只保留相似度大于阈值的电影，最多n条
+            min_score_threshold = 1  # 相似度最低阈值
+            filtered_movie_scores = [item for item in movie_scores if item[1] >= min_score_threshold][:recommend_num]
 
             # 确保至少有一些电影
             if not filtered_movie_scores:
@@ -275,11 +279,11 @@ class RecommendService:
                 user_name=user_name,
                 model_info=json.dumps({
                     'weights': weights,
-                    'time_decay_factor': time_decay_factor,
-                    'total_views': len(user_views),
-                    'total_likes': len(user_likes),
-                    'user_preference': processed_preference,  # 处理后的偏好数据
-                    'generated_at': datetime.now().isoformat()
+                    'timeDecayFactor': time_decay_factor,
+                    'totalViews': len(user_views),
+                    'totalLikes': len(user_likes),
+                    'userPreference': processed_preference,  # 处理后的偏好数据
+                    'createTime': DateUtil.get_time_now(),
                 }, ensure_ascii=False),
                 content=recommend_content,
                 create_time=datetime.now()
@@ -325,7 +329,7 @@ class RecommendService:
         ##转换成数值
         like_score = int(like_score_str)
 
-        view_score_str= SysConfigService.select_config_by_key(ConfigConstants.MOVIE_SCORE_VIEW)
+        view_score_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_SCORE_VIEW)
         ##转换成数值
         view_score = int(view_score_str)
         # 处理浏览记录
@@ -557,8 +561,10 @@ class RecommendService:
                 return []
 
         # 按相似度排序，返回前3000个最相关的电影
+        recommend_num_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_RECOMMEND_NUM)
+        recommend_num = int(recommend_num_str) if recommend_num_str else 3000
         candidates.sort(key=lambda x: x[1], reverse=True)
-        return candidates[:3000]
+        return candidates[:recommend_num]
 
     @classmethod
     def _get_all_popular_movies(cls, exclude_movie_ids: set = None) -> List[Tuple[Movie, float]]:
@@ -889,18 +895,22 @@ class RecommendService:
             if recommend is None:
                 return True  # 没有推荐记录，需要生成
 
-            # 检查用户最近7天的交互数据量（浏览或点赞任一超过5条即可生成新推荐）
-            from ruoyi_movie.mapper.view_mapper import ViewMapper
-            from ruoyi_movie.mapper.like_mapper import LikeMapper
+            # 根据推荐记录创建时间，判断有多少条新纪录
+            # 获取上次推荐的创建时间
+            last_recommend_time = recommend.create_time
 
-            user_views = ViewMapper.select_user_views_by_user_id(user_id, days=7)  # 最近7天
-            user_likes = LikeMapper.select_user_likes_by_user_id(user_id, days=7)  # 最近7天
-
-            # 示例SQL: SELECT * FROM tb_view WHERE user_id = ? AND create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-            # 示例SQL: SELECT * FROM tb_like WHERE user_id = ? AND create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-
-            # 浏览或点赞任一超过5条即可重新生成推荐
-            return len(user_views) >= 5 or len(user_likes) >= 5
+            # 查询在这个时间点之后的新浏览记录
+            new_views = RecommendMapper.select_user_views_after_time(user_id, last_recommend_time)
+            # 查询在这个时间点之后的新点赞记录
+            new_likes = RecommendMapper.select_user_likes_after_time(user_id, last_recommend_time)
+            view_num_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_VIEW_RECORD_NUM)
+            like_num_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_LIKE_NUM)
+            view_num = int(view_num_str) if view_num_str else 10
+            like_num = int(like_num_str) if like_num_str else 3
+            if len(new_views) >= view_num or len(new_likes) >= like_num:
+                return True  # 新的浏览或点赞记录数量达到要求，需要生成新推荐
+            else:
+                return False
 
         except Exception as e:
             LogUtil.logger.error(f"检查用户 {user_id} 是否需要新推荐时出错: {e}")
@@ -916,14 +926,26 @@ class RecommendService:
         """
         try:
             user_name = get_username()
+            genres_weight_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_GENRES_WEIGHT)
+            directors_weight_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_DIRECTORS_WEIGHT)
+            country_weight_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_COUNTRY_WEIGHT)
+            actors_weight_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_ACTORS_WEIGHT)
+            time_decay_factor_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_TIME_DECAY_FACTOR)
+
+            genres_weight = float(genres_weight_str)
+            directors_weight = float(directors_weight_str)
+            country_weight = float(country_weight_str)
+            actors_weight = float(actors_weight_str)
+            time_decay_factor = float(time_decay_factor_str)
+
             cls.generate_recommendation_for_user(
                 user_id=user_id,
                 user_name=user_name,
-                genres_weight=0.3,
-                directors_weight=0.25,
-                country_weight=0.2,
-                actors_weight=0.9,
-                time_decay_factor=0.9
+                genres_weight=genres_weight,
+                directors_weight=directors_weight,
+                country_weight=country_weight,
+                actors_weight=actors_weight,
+                time_decay_factor=time_decay_factor
             )
             LogUtil.logger.info(f"为用户 {user_id} 生成了新的推荐模型")
         except Exception as e:

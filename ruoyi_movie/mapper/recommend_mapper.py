@@ -194,6 +194,36 @@ class RecommendMapper:
         return LikeMapper.select_user_likes_by_user_id(user_id, days)
 
     @classmethod
+    def select_user_views_after_time(cls, user_id: int, after_time):
+        """
+        根据用户ID获取某个时间点之后的所有浏览记录
+
+        Args:
+            user_id (int): 用户ID
+            after_time (datetime): 时间点
+
+        Returns:
+            List[View]: 用户浏览记录列表
+        """
+        # 直接调用ViewMapper的方法
+        return ViewMapper.select_user_views_after_time(user_id, after_time)
+
+    @classmethod
+    def select_user_likes_after_time(cls, user_id: int, after_time):
+        """
+        根据用户ID获取某个时间点之后的所有点赞记录
+
+        Args:
+            user_id (int): 用户ID
+            after_time (datetime): 时间点
+
+        Returns:
+            List[Like]: 用户点赞记录列表
+        """
+        # 直接调用LikeMapper的方法
+        return LikeMapper.select_user_likes_after_time(user_id, after_time)
+
+    @classmethod
     def select_similar_movies(cls, genres: str = None, directors: str = None,
                              country: str = None, actors: str = None,
                              exclude_movie_ids: List[int] = None,

@@ -260,6 +260,31 @@ class LikeMapper:
             return [Like.model_validate(item) for item in result] if result else []
         except Exception as e:
             print(f"获取用户点赞记录出错: {e}")
-            import traceback
-            traceback.print_exc()
+            return []
+
+    @staticmethod
+    def select_user_likes_after_time(user_id: int, after_time: datetime) -> List[Like]:
+        """
+        根据用户ID获取某个时间点之后的所有点赞记录
+
+        Args:
+            user_id (int): 用户ID
+            after_time (datetime): 时间点，只查询此时间点之后的数据
+
+        Returns:
+            List[Like]: 用户点赞记录列表
+        """
+        try:
+            stmt = select(LikePo).where(
+                and_(
+                    LikePo.user_id == user_id,
+                    LikePo.create_time > after_time
+                )
+            ).order_by(LikePo.create_time.desc())
+
+            result = db.session.execute(stmt).scalars().all()
+
+            return [Like.model_validate(item) for item in result] if result else []
+        except Exception as e:
+            print(f"获取用户时间点后点赞记录出错: {e}")
             return []

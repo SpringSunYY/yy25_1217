@@ -246,6 +246,31 @@ class ViewMapper:
             return [View.model_validate(item) for item in result] if result else []
         except Exception as e:
             print(f"获取用户浏览记录出错: {e}")
-            import traceback
-            traceback.print_exc()
+            return []
+
+    @staticmethod
+    def select_user_views_after_time(user_id: int, after_time: datetime) -> List[View]:
+        """
+        根据用户ID获取某个时间点之后的所有浏览记录
+
+        Args:
+            user_id (int): 用户ID
+            after_time (datetime): 时间点，只查询此时间点之后的数据
+
+        Returns:
+            List[View]: 用户浏览记录列表
+        """
+        try:
+            stmt = select(ViewPo).where(
+                and_(
+                    ViewPo.user_id == user_id,
+                    ViewPo.create_time > after_time
+                )
+            ).order_by(ViewPo.create_time.desc())
+
+            result = db.session.execute(stmt).scalars().all()
+
+            return [View.model_validate(item) for item in result] if result else []
+        except Exception as e:
+            print(f"获取用户时间点后浏览记录出错: {e}")
             return []

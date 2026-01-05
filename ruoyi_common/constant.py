@@ -180,3 +180,19 @@ class ConfigConstants:
    MOVIE_SCORE_LIKE="movie:score:like"
    ##浏览分数
    MOVIE_SCORE_VIEW="movie:score:view"
+   #genres_weight 类型权重
+   MOVIE_GENRES_WEIGHT="movie:genres:weight"
+   #directors_weight 导演权重
+   MOVIE_DIRECTORS_WEIGHT="movie:directors:weight"
+   #actors_weight 演员权重
+   MOVIE_ACTORS_WEIGHT="movie:actors:weight"
+   #country_weight 国家权重
+   MOVIE_COUNTRY_WEIGHT="movie:country:weight"
+   #time_decay_factor 时间衰减因子
+   MOVIE_TIME_DECAY_FACTOR="movie:time:decay:factor"
+   #浏览记录条数
+   MOVIE_VIEW_RECORD_NUM="movie:view:number"
+   #喜欢条数
+   MOVIE_LIKE_NUM="movie:like:number"
+   #推荐数
+   MOVIE_RECOMMEND_NUM="movie:recommend:number"
