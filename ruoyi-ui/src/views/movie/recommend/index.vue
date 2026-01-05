@@ -110,7 +110,13 @@
       <el-table-column label="推荐内容" align="center" :show-overflow-tooltip="true" v-if="columns[3].visible"
                        prop="content"/>
       <el-table-column label="推荐模型" align="center" :show-overflow-tooltip="true" v-if="columns[4].visible"
-                       prop="modelInfo"/>
+                       prop="modelInfo">
+        <template slot-scope="scope">
+          <router-link :to="{ name: 'RecommendModel', query: { recommendId: scope.row.id } }" class="link-type">
+            查看模型
+          </router-link>
+        </template>
+      </el-table-column>
       <el-table-column label="创建时间" align="center" :show-overflow-tooltip="true" v-if="columns[5].visible"
                        prop="createTime"/>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
