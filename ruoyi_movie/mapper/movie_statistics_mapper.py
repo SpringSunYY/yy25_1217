@@ -1,8 +1,9 @@
 from typing import List
-from sqlalchemy import select, delete, and_, or_, desc, asc, func, Integer, Float
+
+from sqlalchemy import select, and_, desc, func
+
 from ruoyi_admin.ext import db
 from ruoyi_movie.domain.entity import Movie
-
 from ruoyi_movie.domain.po import MoviePo
 from ruoyi_movie.domain.statistics.po import StatisticsPo
 
@@ -29,6 +30,8 @@ class MovieStatisticsMapper:
                 stmt = stmt.where(and_(MoviePo.publish_date >= request.start_time,
                                        MoviePo.publish_date <= request.end_time))
             stmt = stmt.group_by(MoviePo.actors)
+            if request.genres:
+                stmt = stmt.where(MoviePo.genres.like(f"%{request.genres}%"))
             stmt = stmt.order_by(desc("value"))
             result = db.session.execute(stmt).mappings().all()
             # 过滤掉None值和空值
@@ -55,6 +58,8 @@ class MovieStatisticsMapper:
                 MoviePo.directors.label("name")
             ).select_from(MoviePo)
             stmt = stmt.where(and_(MoviePo.directors.isnot(None), MoviePo.directors != ""))
+            if request.genres:
+                stmt = stmt.where(MoviePo.genres.like(f"%{request.genres}%"))
             if request.start_time and request.end_time:
                 stmt = stmt.where(and_(MoviePo.publish_date >= request.start_time,
                                        MoviePo.publish_date <= request.end_time))
@@ -83,6 +88,8 @@ class MovieStatisticsMapper:
                 stmt = stmt.where(and_(MoviePo.publish_date >= request.start_time,
                                        MoviePo.publish_date <= request.end_time))
             stmt = stmt.order_by(desc(MoviePo.view_count))
+            if request.genres:
+                stmt = stmt.where(MoviePo.genres.like(f"%{request.genres}%"))
             if request.count_number:
                 stmt = stmt.limit(request.count_number)
             result = db.session.execute(stmt).scalars().all()
@@ -90,3 +97,35 @@ class MovieStatisticsMapper:
         except Exception as e:
             print(f"获取电影排行数据失败:{e}")
             return []
+
+    @classmethod
+    def genres_rank_statistics(cls, request):
+        """
+        电影分类排行
+        select avg(rating) as value, directors as name
+        from tb_movie
+        where pub_date >= '2019-01-01'
+          and pub_date <= '2019-12-31'
+        group by name
+        limit 1000
+        """
+        try:
+            # 构建查询条件
+            stmt = select(
+                func.coalesce(func.sum(MoviePo.view_count), 0).label("value"),
+                MoviePo.genres.label("name")
+            ).select_from(MoviePo)
+            stmt = stmt.where(and_(MoviePo.genres.isnot(None), MoviePo.genres != ""))
+            if request.start_time and request.end_time:
+                stmt = stmt.where(and_(MoviePo.publish_date >= request.start_time,
+                                       MoviePo.publish_date <= request.end_time))
+            stmt = stmt.group_by(MoviePo.genres)
+            stmt = stmt.order_by(desc("value"))
+            result = db.session.execute(stmt).mappings().all()
+            # 过滤掉None值和空值
+            return [StatisticsPo(value=int(item.value) if item.value is not None else 0,
+                                 name=str(item.name) if item.name is not None else "")
+                    for item in result if item.value is not None and item.name is not None]
+        except Exception as e:
+            print(f"获取演员排行数据失败:{e}")
+        return []

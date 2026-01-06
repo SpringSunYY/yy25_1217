@@ -11,6 +11,8 @@ class StatisticsVo(BaseModel, Generic[T]):
     """
     value: T
     name: str
+    tooltipText: str
+    moreInfo: str
 
 
 class PieBarStatisticsVo(BaseModel):
@@ -19,4 +21,5 @@ class PieBarStatisticsVo(BaseModel):
     """
     name: str
     tooltipText: str
+    value:int
     values: List[StatisticsVo]

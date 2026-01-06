@@ -18,7 +18,7 @@ export default {
           name: "医养健康",
           value: 12,
           tooltipText: "关注老年人医疗与康复服务",
-          barValue: [
+          values: [
             {"name": "沈河区", "value": 3143, "tooltipText": "沈阳市的政治中心"},
             {"name": "皇姑区", "value": 2889, "tooltipText": "教育资源丰富"},
             {"name": "新民市", "value": 2844, "tooltipText": "农产品基地"},
@@ -39,7 +39,7 @@ export default {
           name: "文化创意",
           value: 8,
           tooltipText: "涵盖动漫、游戏、设计等领域",
-          barValue: [
+          values: [
             {"name": "和平区", "value": 1500, "tooltipText": "文创园区集中"},
             {"name": "沈河区", "value": 1200, "tooltipText": "文化底蕴深厚"},
             {"name": "大东区", "value": 1900, "tooltipText": "排序测试：应排第一"}
@@ -49,7 +49,7 @@ export default {
           name: "新一代信息技术",
           value: 15,
           tooltipText: "包含 5G、人工智能、大数据",
-          barValue: [
+          values: [
             {"name": "浑南区", "value": 4500, "tooltipText": "高新企业聚集"},
             {"name": "沈北新区", "value": 3200, "tooltipText": "数字产业园"}
           ]
@@ -109,7 +109,7 @@ export default {
       if (!this.activeIndustry && this.chartData.length > 0) {
         const first = this.chartData[0];
         this.activeIndustry = first.name;
-        this.currentBarData = [...first.barValue].sort((a, b) => b.value - a.value);
+        this.currentBarData = [...first.values].sort((a, b) => b.value - a.value);
       }
     },
 
@@ -124,7 +124,15 @@ export default {
     // 处理饼图数据（增加透明间隙）
     getPieSeriesData() {
       const pieData = [];
-      const total = this.chartData.reduce((sum, item) => sum + item.value, 0);
+      let total = 0;
+      this.chartData.forEach(item => {
+        //如果没有value
+        if (!item.value) {
+          // 如果没有value，则将value设置为values的和
+          item.value = item.values.reduce((sum, bar) => sum + bar.value, 0);
+        }
+        total += item.value;
+      });
 
       this.chartData.forEach((item, i) => {
         pieData.push({
@@ -311,7 +319,7 @@ export default {
           const selected = this.chartData.find(item => item.name === params.name);
           if (selected) {
             this.activeIndustry = selected.name;
-            this.currentBarData = [...selected.barValue].sort((a, b) => b.value - a.value);
+            this.currentBarData = [...selected.values].sort((a, b) => b.value - a.value);
             this.startIndex = 0;
             this.renderChart(); // 重新渲染以更新标题、轴和排序
             this.$emit('pie-click', selected);

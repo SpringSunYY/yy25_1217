@@ -19,11 +19,17 @@ class MovieStatisticsRequest(BaseModel):
         Field(default=None, description="结束时间"),
         VoField(query=True),
     ]
-    #数量
+    # 数量
     count_number: Annotated[
         Optional[int],
         BeforeValidator(str_to_int),
         Field(default=100, ge=1, le=1000, description="数量"),
         VoField(query=True),
     ]
-
+    # 类型
+    genres: Annotated[
+        Optional[str],
+        BeforeValidator(str_to_int),
+        Field(default=None, description="类型"),
+        VoField(query=True),
+    ]

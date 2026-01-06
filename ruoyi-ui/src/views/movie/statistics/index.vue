@@ -19,7 +19,10 @@
         @rowClicked="handleChartClick"/>
     </el-row>
     <el-row class="chart-wrapper">
-      <PieBarRankingCharts @bar-click="handleChartClick"
+      <PieBarRankingCharts
+        :chart-data="genresRankStatisticsData"
+        :chart-title="genresRankStatisticsName"
+        @bar-click="handleChartClick"
                            @pie-click="handleChartClick"/>
     </el-row>
   </div>
@@ -31,7 +34,12 @@
 import BarRankingCharts from "@/components/echarts/BarRankingCharts.vue";
 import TableRanking from "@/components/echarts/TableRanking.vue";
 import PieBarRankingCharts from "@/components/echarts/PieBarRankingCharts.vue";
-import {getActorRankStatistics, getDirectorRankStatistics, getMovieRankStatistics} from "@/api/movie/statistics";
+import {
+  getActorRankStatistics,
+  getDirectorRankStatistics,
+  getGenresRankStatistics,
+  getMovieRankStatistics
+} from "@/api/movie/statistics";
 
 export default {
   name: 'Index',
@@ -43,7 +51,7 @@ export default {
   data() {
     return {
       queryParams: {
-        count_number: 300
+        countNumber: 300
       },
       dataRange: [],
 
@@ -53,6 +61,10 @@ export default {
       //导演排行
       directorRankStatisticsData: [],
       directorRankStatisticsName: "导演评分排行",
+
+      //分类
+      genresRankStatisticsData: [],
+      genresRankStatisticsName: "电影分类排行",
 
       movieTableData: [],
       movieTableColumns: [
@@ -93,6 +105,7 @@ export default {
       this.getActorRankStatistics();
       this.getDirectorRankStatistics();
       this.getMovieTableData();
+      this.getGenresRankStatistics();
     },
     getActorRankStatistics() {
       getActorRankStatistics(this.queryParams).then(res => {
@@ -109,6 +122,11 @@ export default {
     getMovieTableData() {
       getMovieRankStatistics(this.queryParams).then(res => {
         this.movieTableData = res.data;
+      })
+    },
+    getGenresRankStatistics() {
+      getGenresRankStatistics(this.queryParams).then(res => {
+        this.genresRankStatisticsData = res.data;
       })
     },
     handleChartClick(item) {

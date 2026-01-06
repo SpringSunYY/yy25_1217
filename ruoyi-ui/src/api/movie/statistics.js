@@ -26,3 +26,13 @@ export function getMovieRankStatistics(query) {
     params: query
   })
 }
+
+
+//分类排行
+export function getGenresRankStatistics(query) {
+  return request({
+    url: '/movie/statistics/genres/rank',
+    method: 'get',
+    params: query
+  })
+}

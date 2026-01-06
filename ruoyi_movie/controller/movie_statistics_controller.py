@@ -48,3 +48,16 @@ def movie_rank_statistics(request: MovieStatisticsRequest):
         if hasattr(request_entity, attr):
             setattr(request_entity, attr, getattr(request, attr))
     return AjaxResponse.from_success(data=movie_statistics_service.movie_rank_statistics(request_entity))
+
+#电影类型排行
+@gen.route('/genres/rank', methods=['GET'])
+@QueryValidator(is_page=False)
+@PreAuthorize(HasPerm('movie:statistics:list'))
+@JsonSerializer()
+def genres_rank_statistics(request: MovieStatisticsRequest):
+    """电影类型排行"""
+    request_entity=MovieStatisticsRequest()
+    for attr in request.model_fields.keys():
+        if hasattr(request_entity, attr):
+            setattr(request_entity, attr, getattr(request, attr))
+    return AjaxResponse.from_success(data=movie_statistics_service.genres_rank_statistics(request_entity))

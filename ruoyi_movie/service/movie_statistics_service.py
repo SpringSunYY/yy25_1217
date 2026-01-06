@@ -2,6 +2,7 @@ from typing import List
 
 from ruoyi_movie.domain.entity import Movie
 from ruoyi_movie.domain.statistics.vo import StatisticsVo
+from ruoyi_movie.domain.statistics.vo.statistics_vo import PieBarStatisticsVo
 from ruoyi_movie.mapper.movie_statistics_mapper import MovieStatisticsMapper
 
 
@@ -27,9 +28,9 @@ class MovieStatisticsService:
                     result[actor] += po.value
         # 根据value排序
         result = sorted(result.items(), key=lambda x: x[1], reverse=True)
-        #返回n条
+        # 返回n条
         result = result[:request.count_number]
-        return [StatisticsVo[int](name=name, value=value) for name, value in result]
+        return [StatisticsVo[int](name=name, value=value, tooltipText="", moreInfo="") for name, value in result]
 
     @classmethod
     def director_rank_statistics(cls, request) -> List[StatisticsVo]:
@@ -49,12 +50,42 @@ class MovieStatisticsService:
                 else:
                     # 标识已经有了，要重新计算平均分
                     result[director] = (result[director] + po.value) / 2
-         # 根据value排序,并且保留两位小数
+        # 根据value排序,并且保留两位小数
         result = sorted(result.items(), key=lambda x: x[1], reverse=True)
         result = result[:request.count_number]
-        return [StatisticsVo[float](name=name, value=round(value, 2)) for name, value in result]
+        return [StatisticsVo[float](name=name, value=round(value, 2), tooltipText="", moreInfo="") for name, value in
+                result]
 
     @classmethod
-    def movie_rank_statistics(cls, request)->List[Movie]:
+    def movie_rank_statistics(cls, request) -> List[Movie]:
         """电影排行"""
         return MovieStatisticsMapper.movie_rank_statistics(request)
+
+    @classmethod
+    def genres_rank_statistics(cls, request) -> List[PieBarStatisticsVo]:
+        """电影类型排行"""
+        pos = MovieStatisticsMapper.genres_rank_statistics(request)
+        if pos is None:
+            return []
+        result = {}
+        for po in pos:
+            if po.name is None:
+                continue
+            genres = po.name.split('/')
+            for genre in genres:
+                if genre not in result:
+                    result[genre] = po.value
+                else:
+                    result[genre] += po.value
+        #只要前十，按票房总和降序排序后取前10个
+        result = dict(sorted(result.items(), key=lambda x: x[1], reverse=True)[:10])
+        # 遍历结果，拿到每个类型里面的电影排行
+        result_list = []
+        for key, total_value in result.items():
+            request.genres = key
+            movies = MovieStatisticsMapper.movie_rank_statistics(request)
+            values = []
+            for movie in movies:
+                values.append(StatisticsVo[int](name=movie.title, value=movie.view_count, tooltipText="", moreInfo=""))
+            result_list.append(PieBarStatisticsVo(name=key, tooltipText="", value=total_value, values=values))
+        return result_list
