@@ -17,3 +17,12 @@ export function getDirectorRankStatistics(query) {
     params: query
   })
 }
+
+//电影排行
+export function getMovieRankStatistics(query) {
+  return request({
+    url: '/movie/statistics/movie/rank',
+    method: 'get',
+    params: query
+  })
+}

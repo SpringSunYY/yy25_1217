@@ -1,4 +1,6 @@
 from typing import List
+
+from ruoyi_movie.domain.entity import Movie
 from ruoyi_movie.domain.statistics.vo import StatisticsVo
 from ruoyi_movie.mapper.movie_statistics_mapper import MovieStatisticsMapper
 
@@ -25,7 +27,9 @@ class MovieStatisticsService:
                     result[actor] += po.value
         # 根据value排序
         result = sorted(result.items(), key=lambda x: x[1], reverse=True)
-        return [StatisticsVo(name=name, value=value) for name, value in result]
+        #返回n条
+        result = result[:request.count_number]
+        return [StatisticsVo[int](name=name, value=value) for name, value in result]
 
     @classmethod
     def director_rank_statistics(cls, request) -> List[StatisticsVo]:
@@ -47,4 +51,10 @@ class MovieStatisticsService:
                     result[director] = (result[director] + po.value) / 2
          # 根据value排序,并且保留两位小数
         result = sorted(result.items(), key=lambda x: x[1], reverse=True)
-        return [StatisticsVo(name=name, value=round(value, 2)) for name, value in result]
+        result = result[:request.count_number]
+        return [StatisticsVo[float](name=name, value=round(value, 2)) for name, value in result]
+
+    @classmethod
+    def movie_rank_statistics(cls, request)->List[Movie]:
+        """电影排行"""
+        return MovieStatisticsMapper.movie_rank_statistics(request)

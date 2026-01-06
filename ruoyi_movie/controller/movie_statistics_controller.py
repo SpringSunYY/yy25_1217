@@ -16,7 +16,11 @@ movie_statistics_service = MovieStatisticsService()
 @JsonSerializer()
 def actor_rank_statistics(request: MovieStatisticsRequest):
     """演员票房排行"""
-    return AjaxResponse.from_success(data=movie_statistics_service.actor_rank_statistics(request))
+    request_entity=MovieStatisticsRequest()
+    for attr in request.model_fields.keys():
+        if hasattr(request_entity, attr):
+            setattr(request_entity, attr, getattr(request, attr))
+    return AjaxResponse.from_success(data=movie_statistics_service.actor_rank_statistics(request_entity))
 
 #导演评分排行
 @gen.route('/director/rank', methods=['GET'])
@@ -25,4 +29,22 @@ def actor_rank_statistics(request: MovieStatisticsRequest):
 @JsonSerializer()
 def director_rank_statistics(request: MovieStatisticsRequest):
     """导演评分排行"""
-    return AjaxResponse.from_success(data=movie_statistics_service.director_rank_statistics(request))
+    request_entity=MovieStatisticsRequest()
+    for attr in request.model_fields.keys():
+        if hasattr(request_entity, attr):
+            setattr(request_entity, attr, getattr(request, attr))
+    return AjaxResponse.from_success(data=movie_statistics_service.director_rank_statistics(request_entity))
+
+
+#电影排行
+@gen.route('/movie/rank', methods=['GET'])
+@QueryValidator(is_page=False)
+@PreAuthorize(HasPerm('movie:statistics:list'))
+@JsonSerializer()
+def movie_rank_statistics(request: MovieStatisticsRequest):
+    """电影排行"""
+    request_entity=MovieStatisticsRequest()
+    for attr in request.model_fields.keys():
+        if hasattr(request_entity, attr):
+            setattr(request_entity, attr, getattr(request, attr))
+    return AjaxResponse.from_success(data=movie_statistics_service.movie_rank_statistics(request_entity))

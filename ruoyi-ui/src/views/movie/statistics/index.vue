@@ -13,7 +13,10 @@
                         @item-click="handleChartClick"/>
     </el-row>
     <el-row class="chart-wrapper">
-      <TableRanking @rowClicked="handleChartClick"/>
+      <TableRanking
+        :data="movieTableData"
+        :columns="movieTableColumns"
+        @rowClicked="handleChartClick"/>
     </el-row>
     <el-row class="chart-wrapper">
       <PieBarRankingCharts @bar-click="handleChartClick"
@@ -28,7 +31,7 @@
 import BarRankingCharts from "@/components/echarts/BarRankingCharts.vue";
 import TableRanking from "@/components/echarts/TableRanking.vue";
 import PieBarRankingCharts from "@/components/echarts/PieBarRankingCharts.vue";
-import {getActorRankStatistics, getDirectorRankStatistics} from "@/api/movie/statistics";
+import {getActorRankStatistics, getDirectorRankStatistics, getMovieRankStatistics} from "@/api/movie/statistics";
 
 export default {
   name: 'Index',
@@ -39,7 +42,9 @@ export default {
   },
   data() {
     return {
-      queryParams: {},
+      queryParams: {
+        count_number: 300
+      },
       dataRange: [],
 
       actorRankStatisticsData: [],
@@ -49,6 +54,29 @@ export default {
       directorRankStatisticsData: [],
       directorRankStatisticsName: "导演评分排行",
 
+      movieTableData: [],
+      movieTableColumns: [
+        {
+          label: '电影名称',
+          prop: 'title'
+        },
+        {
+          label: '导演',
+          prop: 'directors'
+        },
+        {
+          label: '播放量',
+          prop: 'viewCount'
+        },
+        {
+          label: '上映时间',
+          prop: 'publishDate'
+        },
+        {
+          label: '上映年份',
+          prop: 'publishYear'
+        }
+      ],
     }
   },
   created() {
@@ -58,12 +86,13 @@ export default {
     getStatisticsData() {
       if (this.dataRange.length && this.dataRange.length >= 1) {
         this.queryParams = {
-          startTime: this.dataRange[0],
-          endTime: this.dataRange[1]
+          start_time: this.dataRange[0],
+          end_time: this.dataRange[1]
         }
       }
       this.getActorRankStatistics();
       this.getDirectorRankStatistics();
+      this.getMovieTableData();
     },
     getActorRankStatistics() {
       getActorRankStatistics(this.queryParams).then(res => {
@@ -76,6 +105,11 @@ export default {
           this.directorRankStatisticsData = res.data;
         }
       )
+    },
+    getMovieTableData() {
+      getMovieRankStatistics(this.queryParams).then(res => {
+        this.movieTableData = res.data;
+      })
     },
     handleChartClick(item) {
       console.log(item)

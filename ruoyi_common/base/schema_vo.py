@@ -332,8 +332,17 @@ class QuerySchemaFactory(BaseSchemaFactory):
         self.extra_model = None
 
     def validate_annotation(self, annotation: Type) -> Optional[Type[BaseEntity]]:
+        from pydantic import BaseModel
         bo_model = get_final_model(annotation)
         if issubclass(bo_model, BaseEntity):
+            updated_model = self.rebuild_model(model_cls=bo_model)
+            # 使用 query_valid_config 而不是原模型的配置，允许额外字段
+            self.model_config = self.model_config.copy()
+            self._validate_context()
+            self.rebuild_extra_model()
+            return updated_model
+        elif issubclass(bo_model, BaseModel):
+            # 支持普通的 BaseModel 类
             updated_model = self.rebuild_model(model_cls=bo_model)
             # 使用 query_valid_config 而不是原模型的配置，允许额外字段
             self.model_config = self.model_config.copy()
