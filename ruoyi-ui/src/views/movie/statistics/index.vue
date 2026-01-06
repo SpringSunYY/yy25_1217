@@ -7,7 +7,7 @@
             :chart-data="genresRankStatisticsData"
             :chart-title="genresRankStatisticsName"
             @bar-click="handleChartClick"
-            @pie-click="handleChartClick"/>
+            @pie-click="handlePieChartClick"/>
         </div>
       </el-col>
       <el-col :span="8">
@@ -150,6 +150,13 @@ export default {
     },
     handleChartClick(item) {
       console.log(item)
+    },
+    //点击分类
+    handlePieChartClick(item) {
+      this.queryParams.genres = item.name;
+      this.getActorRankStatistics();
+      this.getDirectorRankStatistics();
+      this.getMovieTableData();
     }
   }
 }

@@ -29,7 +29,6 @@ class MovieStatisticsRequest(BaseModel):
     # 类型
     genres: Annotated[
         Optional[str],
-        BeforeValidator(str_to_int),
         Field(default=None, description="类型"),
         VoField(query=True),
     ]
