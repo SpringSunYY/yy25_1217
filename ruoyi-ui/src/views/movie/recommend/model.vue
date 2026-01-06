@@ -190,6 +190,7 @@ export default {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
+  background-attachment: fixed;
   min-height: 92vh;
   margin-top: -10px;
   padding: 32px;

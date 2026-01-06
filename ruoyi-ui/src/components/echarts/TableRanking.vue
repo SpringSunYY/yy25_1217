@@ -30,9 +30,10 @@
       </tbody>
     </table>
 
-    <div v-show="tooltipContent" class="tooltip" :style="tooltipStyle">
-      <div v-for="(value, key) in tooltipContent" :key="key">
-        <strong>{{ getLabelByProp(key) }}:</strong> {{ value }}
+    <div v-if="tooltipContent" class="tooltip" :style="tooltipStyle">
+      <div v-for="col in columns" :key="col.prop">
+        <strong>{{ col.label }}:</strong>
+        {{ tooltipContent[col.prop] !== undefined ? tooltipContent[col.prop] : '' }}
       </div>
     </div>
   </div>
@@ -75,7 +76,7 @@ export default {
     // 自动滚动等待时间
     scrollInterval: { type: Number, default: 2000 },
     // 滚动速度（像素/帧）
-    scrollSpeed: { type: Number, default: 1 }
+    scrollSpeed: { type: Number, default: 0.4 }
   },
   data() {
     return {
@@ -122,11 +123,6 @@ export default {
     this.stopAllScrolling();
   },
   methods: {
-    // 通过属性名获取对应的 Label
-    getLabelByProp(prop) {
-      const col = this.columns.find(c => c.prop === prop);
-      return col ? col.label : prop;
-    },
     // 检查内容是否超出容器需要滚动
     checkIfScrollingNeeded() {
       const tableBody = this.$refs.tableBodyRef;

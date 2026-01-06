@@ -1,29 +1,48 @@
 <template>
-  <div class="dashboard-editor-container">
-    <el-row class="chart-wrapper">
-      <BarRankingCharts
-        :chart-data="actorRankStatisticsData"
-        :chart-title="actorRankStatisticsName"
-        @item-click="handleChartClick"/>
-    </el-row>
-    <el-row class="chart-wrapper">
-      <BarRankingCharts direction="left"
-                        :chart-data="directorRankStatisticsData"
-                        :chart-title="directorRankStatisticsName"
-                        @item-click="handleChartClick"/>
-    </el-row>
-    <el-row class="chart-wrapper">
-      <TableRanking
-        :data="movieTableData"
-        :columns="movieTableColumns"
-        @rowClicked="handleChartClick"/>
-    </el-row>
-    <el-row class="chart-wrapper">
-      <PieBarRankingCharts
-        :chart-data="genresRankStatisticsData"
-        :chart-title="genresRankStatisticsName"
-        @bar-click="handleChartClick"
-                           @pie-click="handleChartClick"/>
+  <div class="app-container">
+    <el-row>
+      <el-col :span="24">
+        <div class="chart-wrapper">
+          <PieBarRankingCharts
+            :chart-data="genresRankStatisticsData"
+            :chart-title="genresRankStatisticsName"
+            @bar-click="handleChartClick"
+            @pie-click="handleChartClick"/>
+        </div>
+      </el-col>
+      <el-col :span="8">
+        <div class="chart-wrapper"></div>
+      </el-col>
+      <el-col :span="16">
+        <div class="chart-wrapper">
+          <BarRankingCharts direction="left"
+                            :chart-data="directorRankStatisticsData"
+                            :chart-title="directorRankStatisticsName"
+                            @item-click="handleChartClick"/>
+        </div>
+      </el-col>
+      <el-col :span="16">
+        <div class="chart-wrapper">
+          <BarRankingCharts
+            :chart-data="actorRankStatisticsData"
+            :chart-title="actorRankStatisticsName"
+            @item-click="handleChartClick"/>
+        </div>
+      </el-col>
+      <el-col :span="8">
+        <div class="chart-wrapper"></div>
+      </el-col>
+      <el-col :span="8">
+        <div class="chart-wrapper"></div>
+      </el-col>
+      <el-col :span="16">
+        <div class="chart-wrapper">
+          <TableRanking
+            :data="movieTableData"
+            :columns="movieTableColumns"
+            @rowClicked="handleChartClick"/>
+        </div>
+      </el-col>
     </el-row>
   </div>
 </template>
@@ -137,17 +156,21 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.dashboard-editor-container {
+.app-container {
+  background-image: url("../../../assets/images/map.png");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+  background-position: center;
+  min-height: 92vh;
+  margin-top: -10px;
   padding: 32px;
-  background-color: rgb(240, 242, 245);
-  position: relative;
+}
 
-  .chart-wrapper {
-    height: 35vh;
-    background: rgba(0, 0, 0, 0.13);
-    padding: 16px 16px 0;
-    margin-bottom: 32px;
-  }
+.chart-wrapper {
+  height: 40vh;
+  padding: 16px 16px 0;
+  margin-bottom: 32px;
 }
 
 @media (max-width: 1024px) {
