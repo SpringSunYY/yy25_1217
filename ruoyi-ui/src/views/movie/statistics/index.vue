@@ -7,7 +7,11 @@
       <BarRankingCharts direction="left" :interval-time="0" @item-click="handleChartClick"/>
     </el-row>
     <el-row class="chart-wrapper">
-      <TableRanking  @rowClicked="handleChartClick"/>
+      <TableRanking @rowClicked="handleChartClick"/>
+    </el-row>
+    <el-row class="chart-wrapper">
+      <PieBarRankingCharts @bar-click="handleChartClick"
+                           @pie-click="handleChartClick"/>
     </el-row>
   </div>
 </template>
@@ -17,16 +21,17 @@
 
 import BarRankingCharts from "@/components/echarts/BarRankingCharts.vue";
 import TableRanking from "@/components/echarts/TableRanking.vue";
+import PieBarRankingCharts from "@/components/echarts/PieBarRankingCharts.vue";
 
 export default {
   name: 'Index',
   components: {
+    PieBarRankingCharts,
     TableRanking,
     BarRankingCharts
   },
   data() {
-    return {
-    }
+    return {}
   },
   methods: {
     handleChartClick(item) {
