@@ -8,3 +8,12 @@ export function getActorRankStatistics(query) {
     params: query
   })
 }
+
+//导演排行
+export function getDirectorRankStatistics(query) {
+  return request({
+    url: '/movie/statistics/director/rank',
+    method: 'get',
+    params: query
+  })
+}

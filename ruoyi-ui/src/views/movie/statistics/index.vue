@@ -7,7 +7,10 @@
         @item-click="handleChartClick"/>
     </el-row>
     <el-row class="chart-wrapper">
-      <BarRankingCharts direction="left" :interval-time="0" @item-click="handleChartClick"/>
+      <BarRankingCharts direction="left"
+                        :chart-data="directorRankStatisticsData"
+                        :chart-title="directorRankStatisticsName"
+                        @item-click="handleChartClick"/>
     </el-row>
     <el-row class="chart-wrapper">
       <TableRanking @rowClicked="handleChartClick"/>
@@ -25,7 +28,7 @@
 import BarRankingCharts from "@/components/echarts/BarRankingCharts.vue";
 import TableRanking from "@/components/echarts/TableRanking.vue";
 import PieBarRankingCharts from "@/components/echarts/PieBarRankingCharts.vue";
-import {getActorRankStatistics} from "@/api/movie/statistics";
+import {getActorRankStatistics, getDirectorRankStatistics} from "@/api/movie/statistics";
 
 export default {
   name: 'Index',
@@ -42,6 +45,10 @@ export default {
       actorRankStatisticsData: [],
       actorRankStatisticsName: "演员播放排行",
 
+      //导演排行
+      directorRankStatisticsData: [],
+      directorRankStatisticsName: "导演评分排行",
+
     }
   },
   created() {
@@ -56,10 +63,17 @@ export default {
         }
       }
       this.getActorRankStatistics();
+      this.getDirectorRankStatistics();
     },
     getActorRankStatistics() {
       getActorRankStatistics(this.queryParams).then(res => {
           this.actorRankStatisticsData = res.data;
+        }
+      )
+    },
+    getDirectorRankStatistics() {
+      getDirectorRankStatistics(this.queryParams).then(res => {
+          this.directorRankStatisticsData = res.data;
         }
       )
     },

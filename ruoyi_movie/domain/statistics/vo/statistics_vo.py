@@ -1,13 +1,15 @@
-from typing import List, Optional
+from typing import List, Optional, TypeVar, Generic
 
 from pydantic import BaseModel, Field
 
+T = TypeVar('T', int, float)
 
-class StatisticsVo(BaseModel):
+
+class StatisticsVo(BaseModel, Generic[T]):
     """
     统计总数对象
     """
-    value: int
+    value: T
     name: str
 
 
@@ -18,7 +20,3 @@ class PieBarStatisticsVo(BaseModel):
     name: str
     tooltipText: str
     values: List[StatisticsVo]
-
-
-
-

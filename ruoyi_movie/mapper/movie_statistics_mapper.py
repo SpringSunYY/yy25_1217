@@ -20,15 +20,48 @@ class MovieStatisticsMapper:
         try:
             # 构建查询条件
             stmt = select(
-                func.sum(MoviePo.view_count).label("value"),
+                func.coalesce(func.sum(MoviePo.view_count), 0).label("value"),
                 MoviePo.actors.label("name")
             ).select_from(MoviePo)
+            stmt = stmt.where(and_(MoviePo.actors.isnot(None), MoviePo.actors != ""))
             if request.start_time and request.end_time:
                 stmt = stmt.where(and_(MoviePo.publish_date >= request.start_time,
-                                       MoviePo.pub_date <= request.end_time))
+                                       MoviePo.publish_date <= request.end_time))
             stmt = stmt.group_by(MoviePo.actors)
             result = db.session.execute(stmt).mappings().all()
-            return [StatisticsPo(value=item.value, name=str(item.name)) for item in result]
+            # 过滤掉None值和空值
+            return [StatisticsPo(value=int(item.value) if item.value is not None else 0,
+                                name=str(item.name) if item.name is not None else "")
+                   for item in result if item.value is not None and item.name is not None]
         except Exception as e:
             print(f"获取演员排行数据失败:{e}")
+            return []
+
+    @classmethod
+    def director_rank_statistics(cls, request) -> List[StatisticsPo]:
+        """
+        导演评分排行
+        select avg(rating) as value, directors as name
+        from tb_movie
+        where pub_date >= '2019-01-01'
+          and pub_date <= '2019-12-31'
+        group by name
+        """
+        try:
+            stmt = select(
+                func.coalesce(func.avg(MoviePo.rating), 0.0).label("value"),
+                MoviePo.directors.label("name")
+            ).select_from(MoviePo)
+            stmt = stmt.where(and_(MoviePo.directors.isnot(None), MoviePo.directors != ""))
+            if request.start_time and request.end_time:
+                stmt = stmt.where(and_(MoviePo.publish_date >= request.start_time,
+                                       MoviePo.publish_date <= request.end_time))
+            stmt = stmt.group_by(MoviePo.directors)
+            result = db.session.execute(stmt).mappings().all()
+            # 过滤掉None值和空值
+            return [StatisticsPo(value=float(item.value) if item.value is not None else 0.0,
+                                name=str(item.name) if item.name is not None else "")
+                   for item in result if item.value is not None and item.name is not None]
+        except Exception as e:
+            print(f"获取导演排行数据失败:{e}")
             return []
