@@ -1,7 +1,10 @@
 <template>
   <div class="dashboard-editor-container">
     <el-row class="chart-wrapper">
-      <BarRankingCharts @item-click="handleChartClick"/>
+      <BarRankingCharts
+        :chart-data="actorRankStatisticsData"
+        :chart-title="actorRankStatisticsName"
+        @item-click="handleChartClick"/>
     </el-row>
     <el-row class="chart-wrapper">
       <BarRankingCharts direction="left" :interval-time="0" @item-click="handleChartClick"/>
@@ -22,6 +25,7 @@
 import BarRankingCharts from "@/components/echarts/BarRankingCharts.vue";
 import TableRanking from "@/components/echarts/TableRanking.vue";
 import PieBarRankingCharts from "@/components/echarts/PieBarRankingCharts.vue";
+import {getActorRankStatistics} from "@/api/movie/statistics";
 
 export default {
   name: 'Index',
@@ -31,9 +35,34 @@ export default {
     BarRankingCharts
   },
   data() {
-    return {}
+    return {
+      queryParams: {},
+      dataRange: [],
+
+      actorRankStatisticsData: [],
+      actorRankStatisticsName: "演员播放排行",
+
+    }
+  },
+  created() {
+    this.getStatisticsData();
   },
   methods: {
+    getStatisticsData() {
+      if (this.dataRange.length && this.dataRange.length >= 1) {
+        this.queryParams = {
+          startTime: this.dataRange[0],
+          endTime: this.dataRange[1]
+        }
+      }
+      this.getActorRankStatistics();
+    },
+    getActorRankStatistics() {
+      getActorRankStatistics(this.queryParams).then(res => {
+          this.actorRankStatisticsData = res.data;
+        }
+      )
+    },
     handleChartClick(item) {
       console.log(item)
     }

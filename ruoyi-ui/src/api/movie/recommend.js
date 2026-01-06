@@ -1,9 +1,5 @@
 import request from '@/utils/request'
 
-
-
-
-
 // 查询用户推荐列表
 export function listRecommend(query) {
   return request({

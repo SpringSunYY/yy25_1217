@@ -5,7 +5,7 @@
 def init_app(app):
     """
     初始化模块，注册蓝图
-    
+
     Args:
         app: Flask应用实例
     """
@@ -25,3 +25,6 @@ def init_app(app):
     # 使用 pythonModelName 生成 Python 导入路径
     from ruoyi_movie.controller import like
     app.register_blueprint(like)
+    # 使用 pythonModelName 生成 Python 导入路径
+    from ruoyi_movie.controller import movie_statistics
+    app.register_blueprint(movie_statistics)

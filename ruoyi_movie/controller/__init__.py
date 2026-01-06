@@ -8,10 +8,11 @@ recommend = Blueprint('recommend', __name__, url_prefix='/movie/recommend')
 movie_review = Blueprint('movie_review', __name__, url_prefix='/movie/movieReview')
 movie = Blueprint('movie', __name__, url_prefix='/movie/movie')
 like = Blueprint('like', __name__, url_prefix='/movie/like')
-
+movie_statistics= Blueprint('statistics', __name__, url_prefix='/movie/statistics')
 
 from . import view_controller
 from . import recommend_controller
 from . import movie_review_controller
 from . import movie_controller
 from . import like_controller
+from . import movie_statistics_controller
