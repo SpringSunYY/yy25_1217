@@ -108,7 +108,11 @@
       <el-table-column label="用户名" align="center" :show-overflow-tooltip="true" v-if="columns[2].visible"
                        prop="userName"/>
       <el-table-column label="推荐内容" align="center" :show-overflow-tooltip="true" v-if="columns[3].visible"
-                       prop="content"/>
+                       prop="content">
+        <router-link :to="{ name: 'Index'}" class="link-type">
+          查看推荐
+        </router-link>
+      </el-table-column>
       <el-table-column label="推荐模型" align="center" :show-overflow-tooltip="true" v-if="columns[4].visible"
                        prop="modelInfo">
         <template slot-scope="scope">

@@ -9,7 +9,8 @@ from typing import List
 from ruoyi_common.constant import ConfigConstants
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
-from ruoyi_common.utils.security_util import get_user_id, get_username
+from ruoyi_common.utils.security_util import get_user_id, get_username, is_admin
+from ruoyi_framework.descriptor.datascope import DataScope
 from ruoyi_movie.domain.entity import Like
 from ruoyi_movie.mapper import MovieMapper
 from ruoyi_movie.mapper.like_mapper import LikeMapper
@@ -18,8 +19,9 @@ from ruoyi_system.service import SysConfigService
 
 class LikeService:
     """用户点赞表服务类"""
-
-    def select_like_list(self, like: Like) -> List[Like]:
+    @classmethod
+    @DataScope(dept=True, user=True)
+    def select_like_list(cls, like: Like) -> List[Like]:
         """
         查询用户点赞表列表
 

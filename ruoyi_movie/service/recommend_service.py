@@ -9,18 +9,15 @@ from collections import defaultdict
 from datetime import datetime
 from typing import List, Optional, Dict, Tuple
 
-from flask import g
-from ruoyi_common.base.model import PageModel, CriterianMeta
 from ruoyi_common.constant import ConfigConstants
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils import DateUtil
 from ruoyi_common.utils.base import LogUtil
 from ruoyi_common.utils.security_util import get_username
-from ruoyi_movie.controller import recommend
-from ruoyi_movie.domain.entity import Recommend, View, Like, Movie, MovieSearchDTO
+from ruoyi_framework.descriptor.datascope import DataScope
+from ruoyi_movie.domain.entity import Recommend, View, Like, Movie
 from ruoyi_movie.mapper.movie_mapper import MovieMapper
 from ruoyi_movie.mapper.recommend_mapper import RecommendMapper
-from ruoyi_movie.service import MovieService
 from ruoyi_system.service import SysConfigService
 
 
@@ -28,6 +25,7 @@ class RecommendService:
     """用户推荐服务类"""
 
     @classmethod
+    @DataScope(dept=True, user=True)
     def select_recommend_list(cls, recommend: Recommend) -> List[Recommend]:
         """
         查询用户推荐列表

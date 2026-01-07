@@ -63,6 +63,13 @@ class ViewMapper:
 
             if "criterian_meta" in g and g.criterian_meta.page:
                 g.criterian_meta.page.stmt = stmt
+
+            # 应用数据范围过滤（如果 DataScope 设置了有效的过滤条件）
+            if ("criterian_meta" in g and
+                    g.criterian_meta.scope is not None and
+                    g.criterian_meta.scope != [] and
+                    g.criterian_meta.scope != ()):
+                stmt = stmt.where(g.criterian_meta.scope)
             #根据创建时间倒序
             stmt = stmt.order_by(ViewPo.create_time.desc())
             result = db.session.execute(stmt).scalars().all()

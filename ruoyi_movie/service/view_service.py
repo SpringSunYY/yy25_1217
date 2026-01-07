@@ -9,6 +9,7 @@ from ruoyi_common.constant import ConfigConstants
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
 from ruoyi_common.utils.security_util import get_user_id, get_username
+from ruoyi_framework.descriptor.datascope import DataScope
 from ruoyi_movie.domain.entity import View, Movie
 from ruoyi_movie.mapper.view_mapper import ViewMapper
 from ruoyi_system.service import SysConfigService
@@ -17,6 +18,7 @@ from ruoyi_system.service import SysConfigService
 class ViewService:
     """用户浏览服务类"""
 
+    @DataScope(dept=True, user=True)
     def select_view_list(self, view: View) -> List[View]:
         """
         查询用户浏览列表
@@ -68,7 +70,7 @@ class ViewService:
         existing = ViewMapper.select_view_by_movie_id_and_date(movie.movie_id, user_id, now_date)
         if existing:
             return 0
-        score_str= SysConfigService.select_config_by_key(ConfigConstants.MOVIE_SCORE_VIEW)
+        score_str = SysConfigService.select_config_by_key(ConfigConstants.MOVIE_SCORE_VIEW)
         ##转换成数值
         score = int(score_str)
         view_info.user_id = user_id

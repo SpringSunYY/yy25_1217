@@ -36,7 +36,7 @@ class MovieStatisticsService:
         result = sorted(result.items(), key=lambda x: x[1], reverse=True)
         # 返回n条
         result = result[:request.count_number]
-        return [StatisticsVo[int](name=name, value=value, tooltipText="", moreInfo="") for name, value in result]
+        return [StatisticsVo(name=name, value=value, tooltipText="", moreInfo="") for name, value in result]
 
     @classmethod
     @custom_cacheable(
@@ -64,7 +64,7 @@ class MovieStatisticsService:
         # 根据value排序,并且保留两位小数
         result = sorted(result.items(), key=lambda x: x[1], reverse=True)
         result = result[:request.count_number]
-        return [StatisticsVo[float](name=name, value=round(value, 2), tooltipText="", moreInfo="") for name, value in
+        return [StatisticsVo(name=name, value=round(value, 2), tooltipText="", moreInfo="") for name, value in
                 result]
 
     @classmethod
@@ -108,7 +108,7 @@ class MovieStatisticsService:
             values = []
             for movie in movies:
                 values.append(
-                    StatisticsVo[float](name=movie.title, value=round(movie.rating, 2) if movie.rating else 0.0,
+                    StatisticsVo(name=movie.title, value=round(movie.rating, 2) if movie.rating else 0.0,
                                         tooltipText="", moreInfo="", movieId=movie.movie_id))
             result_list.append(PieBarStatisticsVo(name=key, tooltipText="", value=total_value, values=values))
         return result_list

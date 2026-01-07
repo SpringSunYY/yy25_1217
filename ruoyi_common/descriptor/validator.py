@@ -55,20 +55,20 @@ class ValidatorScopeFunction(AbcValidatorFunction):
             raise Exception("参数必须是位置参数")
 
     def validate_unbound_parameters(self):
-        index = 0
+        found_model = False
         for key in self.sig.parameters:
             param = self.sig.parameters[key]
             self._validate_kind(param.kind)
-            if isinstance(param.annotation, BaseModel):
-                self._unbound_model = (key,param.annotation)
-                if index > 0:
+            if inspect.isclass(param.annotation) and issubclass(param.annotation, BaseModel):
+                if found_model:
                     raise Exception(
                         f"{self.func.__name__} 类型参数有且仅有第一个"
                     )
+                self._unbound_model = (key,param.annotation)
+                found_model = True
             else:
                 self._unbound_fields[key] = \
                     FieldInfo.from_annotation(param.annotation)
-            index += 1
 
     def validate_function(self):
         self.func = validate_call(self.func)
@@ -101,7 +101,7 @@ class ValidatorViewFunction(AbcValidatorFunction):
             raise Exception("参数必须是位置参数")
 
     def validate_unbound_parameters(self):
-        index = 0
+        found_model = False
         for key in self.sig.parameters:
             param = self.sig.parameters[key]
             self._validate_kind(param.kind)
@@ -109,25 +109,26 @@ class ValidatorViewFunction(AbcValidatorFunction):
                 annotation = self._schema_factory. \
                     validate_annotation(param.annotation)
                 if annotation:
-                    self._unbound_model = (key,annotation)
-                    if index > 0:
+                    if found_model:
                         raise Exception(
                             f"{self.func.__name__} 类型参数有且仅有第一个"
                         )
+                    self._unbound_model = (key,annotation)
+                    found_model = True
                 else:
                     self._unbound_fields[key] = \
                         FieldInfo.from_annotation(param.annotation)
             else:
-                if isinstance(param.annotation, BaseModel):
-                    self._unbound_model = (key,param.annotation)
-                    if index > 0:
+                if inspect.isclass(param.annotation) and issubclass(param.annotation, BaseModel):
+                    if found_model:
                         raise Exception(
                             f"{self.func.__name__} 类型参数有且仅有第一个"
                         )
+                    self._unbound_model = (key,param.annotation)
+                    found_model = True
                 else:
                     self._unbound_fields[key] = \
                         FieldInfo.from_annotation(param.annotation)
-            index += 1
 
     def validate_function(self):
         if self._schema_factory:

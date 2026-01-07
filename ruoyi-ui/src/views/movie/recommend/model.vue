@@ -212,7 +212,7 @@ export default {
 
 /* 标题居中，简洁大方 */
 .page-title {
-  flex: 1;
+  flex: 3;
   font-size: 42px;
   font-weight: 700;
   color: #ffffff;
@@ -223,7 +223,7 @@ export default {
 }
 
 .info-section {
-  flex: 1;
+  flex: 4;
   display: flex;
   gap: 24px;
 }
