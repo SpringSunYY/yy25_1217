@@ -83,9 +83,9 @@ class MovieStatisticsService:
         result_list = []
         for key, total_value in result.items():
             request.genres = key
-            movies = MovieStatisticsMapper.movie_rank_statistics(request)
+            movies = MovieStatisticsMapper.movie_rating_rank_statistics(request)
             values = []
             for movie in movies:
-                values.append(StatisticsVo[int](name=movie.title, value=movie.view_count, tooltipText="", moreInfo=""))
+                values.append(StatisticsVo[float](name=movie.title, value=round(movie.rating, 2) if movie.rating else 0.0, tooltipText="", moreInfo=""))
             result_list.append(PieBarStatisticsVo(name=key, tooltipText="", value=total_value, values=values))
         return result_list

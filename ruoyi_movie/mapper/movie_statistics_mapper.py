@@ -75,7 +75,7 @@ class MovieStatisticsMapper:
             return []
 
     @classmethod
-    def movie_rank_statistics(cls, request):
+    def movie_rank_statistics(cls, request)-> List[Movie]:
         """
         电影排行
         根据播放量
@@ -129,3 +129,27 @@ class MovieStatisticsMapper:
         except Exception as e:
             print(f"获取演员排行数据失败:{e}")
         return []
+
+    @classmethod
+    def movie_rating_rank_statistics(cls, request) -> List[Movie]:
+        """
+           电影排行
+           根据评分
+       """
+        try:
+            # 构建查询条件
+            stmt = select(MoviePo)
+            stmt = stmt.where(and_(MoviePo.rating.isnot(None), MoviePo.rating > 0))
+            if request.start_time and request.end_time:
+                stmt = stmt.where(and_(MoviePo.publish_date >= request.start_time,
+                                       MoviePo.publish_date <= request.end_time))
+            stmt = stmt.order_by(desc(MoviePo.rating))
+            if request.genres:
+                stmt = stmt.where(MoviePo.genres.like(f"%{request.genres}%"))
+            if request.count_number:
+                stmt = stmt.limit(request.count_number)
+            result = db.session.execute(stmt).scalars().all()
+            return [Movie.model_validate(item) for item in result] if result else []
+        except Exception as e:
+            print(f"获取电影评分排行数据失败:{e}")
+            return []

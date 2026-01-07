@@ -50,6 +50,7 @@ export default {
     showCount: {type: Number, default: 8},
     intervalTime: {type: Number, default: 2500},
     backgroundColor: {type: String, default: 'transparent'},
+    showLabelSize: {type: Number, default: 6},
   },
 
   data() {
@@ -224,10 +225,15 @@ export default {
             color: "#fff",
             fontSize: 14,
             formatter: (value, index) => {
-              if (index === 0) return '{a|' + value + '}';
-              if (index === 1) return '{b|' + value + '}';
-              if (index === 2) return '{c|' + value + '}';
-              return value;
+              let displayValue = value;
+              if (value.length > this.showLabelSize) {
+                displayValue = value.substring(0, this.showLabelSize);
+              }
+
+              if (index === 0) return '{a|' + displayValue + '}';
+              if (index === 1) return '{b|' + displayValue + '}';
+              if (index === 2) return '{c|' + displayValue + '}';
+              return displayValue;
             },
             rich: {
               a: {color: '#ffde00', fontSize: 16, fontWeight: 'bold'},

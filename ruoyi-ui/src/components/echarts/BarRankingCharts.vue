@@ -15,33 +15,34 @@ import * as echarts from 'echarts';
 export default {
   name: 'BarRankingCharts',
   props: {
-    className: { type: String, default: 'chart' },
-    width: { type: String, default: '100%' },
-    height: { type: String, default: '100%' },
+    className: {type: String, default: 'chart'},
+    width: {type: String, default: '100%'},
+    height: {type: String, default: '100%'},
     // 基础数据
     chartData: {
       type: Array,
       default: () => [
-        { "name": "沈河区", "value": 3143, "tooltipText": "沈阳市中心" },
-        { "name": "皇姑区", "value": 2889, "tooltipText": "教育资源" },
-        { "name": "新民市", "value": 2844, "tooltipText": "农产品基地" },
-        { "name": "于洪区", "value": 2736, "tooltipText": "物流仓储" },
-        { "name": "铁西区", "value": 2367, "tooltipText": "老工业基地" },
-        { "name": "大东区", "value": 2229, "tooltipText": "汽车产业" },
-        { "name": "沈北新区", "value": 2168, "tooltipText": "大学城" },
-        { "name": "苏家屯区", "value": 1941, "tooltipText": "沈阳南大门" },
-        { "name": "康平县", "value": 1918, "tooltipText": "风能发电" },
-        { "name": "和平区", "value": 1827, "tooltipText": "商业街" }
+        {"name": "沈河区", "value": 3143, "tooltipText": "沈阳市中心"},
+        {"name": "皇姑区", "value": 2889, "tooltipText": "教育资源"},
+        {"name": "新民市", "value": 2844, "tooltipText": "农产品基地"},
+        {"name": "于洪区", "value": 2736, "tooltipText": "物流仓储"},
+        {"name": "铁西区", "value": 2367, "tooltipText": "老工业基地"},
+        {"name": "大东区", "value": 2229, "tooltipText": "汽车产业"},
+        {"name": "沈北新区", "value": 2168, "tooltipText": "大学城"},
+        {"name": "苏家屯区", "value": 1941, "tooltipText": "沈阳南大门"},
+        {"name": "康平县", "value": 1918, "tooltipText": "风能发电"},
+        {"name": "和平区", "value": 1827, "tooltipText": "商业街"}
       ]
     },
-    chartTitle: { type: String, default: '沈阳市各区县数据排行榜' },
-    showCount: { type: Number, default: 8 }, // 每屏显示数量
-    intervalTime: { type: Number, default: 2500 }, // 轮播间隔
+    chartTitle: {type: String, default: '沈阳市各区县数据排行榜'},
+    showCount: {type: Number, default: 8}, // 每屏显示数量
+    intervalTime: {type: Number, default: 2500}, // 轮播间隔
     direction: {
       type: String,
       default: 'right',
       validator: (v) => ['left', 'right'].includes(v)
-    }
+    },
+    showLabelSize: {type: Number, default: 6},// 显示的标签字符长度
   },
 
   data() {
@@ -120,7 +121,7 @@ export default {
           text: this.chartTitle,
           left: 'center',
           top: 10,
-          textStyle: { color: '#fff', fontSize: 18 }
+          textStyle: {color: '#fff', fontSize: 18}
         },
         tooltip: {
           trigger: 'axis',
@@ -165,10 +166,15 @@ export default {
             color: "#fff",
             fontSize: 14,
             formatter: (value, index) => {
-              if (index === 0) return '{a|' + value + '}';
-              if (index === 1) return '{b|' + value + '}';
-              if (index === 2) return '{c|' + value + '}';
-              return value;
+              let displayValue = value;
+              if (value.length > this.showLabelSize) {
+                displayValue = value.substring(0, this.showLabelSize);
+              }
+
+              if (index === 0) return '{a|' + displayValue + '}';
+              if (index === 1) return '{b|' + displayValue + '}';
+              if (index === 2) return '{c|' + displayValue + '}';
+              return displayValue;
             },
             rich: {
               a: {color: '#ffde00', fontSize: 16, fontWeight: 'bold'},
@@ -182,12 +188,12 @@ export default {
           barWidth: 18,
           data: values,
           showBackground: true,
-          backgroundStyle: { color: 'rgba(255, 255, 255, 0.05)', borderRadius: 10 },
+          backgroundStyle: {color: 'rgba(255, 255, 255, 0.05)', borderRadius: 10},
           itemStyle: {
             borderRadius: 10,
             color: new echarts.graphic.LinearGradient(isRight ? 0 : 1, 0, isRight ? 1 : 0, 0, [
-              { offset: 0, color: '#347CDD' },
-              { offset: 1, color: '#56fb93' }
+              {offset: 0, color: '#347CDD'},
+              {offset: 1, color: '#56fb93'}
             ])
           },
           label: {
