@@ -5,7 +5,7 @@
 
 import re
 from datetime import datetime
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from flask import g
 from sqlalchemy import select, delete, and_, or_, desc, asc, func
@@ -709,3 +709,39 @@ class MovieMapper:
         except Exception as e:
             LogUtil.logger.error(f"批量查询电影信息失败: {e}")
             return []
+
+    @classmethod
+    def select_movies_by_rating_paginated(cls, page_num: int = 1, page_size: int = 10) -> Tuple[List[Movie], int]:
+        """
+        按评分倒序排序分页查询电影
+
+        Args:
+            page_num (int): 页码，默认1
+            page_size (int): 每页数量，默认10
+
+        Returns:
+            Tuple[List[Movie], int]: (电影列表, 总数)
+        """
+        try:
+            from sqlalchemy import desc, func
+
+            # 计算偏移量
+            offset_val = (page_num - 1) * page_size
+
+            # 构建分页查询，按评分倒序排序
+            stmt = select(MoviePo).order_by(desc(MoviePo.rating)).offset(offset_val).limit(page_size)
+            result = db.session.execute(stmt).scalars().all()
+
+            # 查询总数
+            count_stmt = select(func.count(MoviePo.id))
+            total_result = db.session.execute(count_stmt).scalar()
+            total_count = total_result or 0
+
+            # 转换为Movie实体
+            movies = [Movie.model_validate(item) for item in result] if result else []
+
+            return movies, total_count
+
+        except Exception as e:
+            LogUtil.logger.error(f"按评分分页查询电影失败: {e}")
+            return [], 0

@@ -167,7 +167,6 @@ def get_recommend_content():
         user_id = get_user_id()
         page_num = request.args.get('pageNum', 1, type=int)
         page_size = request.args.get('pageSize', 10, type=int)
-
         # 调用service层获取推荐内容（service层会自动处理推荐模型的生成和分页）
         result = recommend_service.get_user_recommendations_paginated(user_id, page_num, page_size)
         # 使用TableResponse返回标准格式

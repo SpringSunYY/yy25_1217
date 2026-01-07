@@ -223,6 +223,8 @@ class MovieService:
             int: 删除的记录数
         """
         return MovieMapper.delete_movie_by_ids(ids)
+
+    @classmethod
     @custom_cacheable(
         key_prefix="movie:search:list",
         expire_time=60 * 5,

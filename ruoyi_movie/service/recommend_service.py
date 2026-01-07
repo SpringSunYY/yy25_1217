@@ -9,15 +9,18 @@ from collections import defaultdict
 from datetime import datetime
 from typing import List, Optional, Dict, Tuple
 
+from flask import g
+from ruoyi_common.base.model import PageModel, CriterianMeta
 from ruoyi_common.constant import ConfigConstants
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils import DateUtil
 from ruoyi_common.utils.base import LogUtil
 from ruoyi_common.utils.security_util import get_username
 from ruoyi_movie.controller import recommend
-from ruoyi_movie.domain.entity import Recommend, View, Like, Movie
+from ruoyi_movie.domain.entity import Recommend, View, Like, Movie, MovieSearchDTO
 from ruoyi_movie.mapper.movie_mapper import MovieMapper
 from ruoyi_movie.mapper.recommend_mapper import RecommendMapper
+from ruoyi_movie.service import MovieService
 from ruoyi_system.service import SysConfigService
 
 
@@ -952,6 +955,54 @@ class RecommendService:
             LogUtil.logger.error(f"为用户 {user_id} 生成新推荐模型失败: {e}")
 
     @classmethod
+    def get_top_rated_movies_paginated(cls, page_num: int = 1, page_size: int = 10) -> Dict:
+        """
+        获取按评分排序的电影分页列表（用于没有推荐记录时的默认推荐）
+
+        Args:
+            page_num (int): 页码，默认1
+            page_size (int): 每页数量，默认10
+
+        Returns:
+            Dict: 包含rows和total的字典
+        """
+        try:
+            # 调用mapper层获取按评分排序的分页数据
+            movies, total_count = MovieMapper.select_movies_by_rating_paginated(page_num, page_size)
+
+            # 将Movie对象转换为字典格式
+            rows = []
+            for movie in movies:
+                movie_data = {
+                    'movieId': movie.movie_id or 0,
+                    'title': movie.title or '',
+                    'rating': movie.rating or 0.0,
+                    'genres': movie.genres or '',
+                    'directors': movie.directors or '',
+                    'country': movie.country or '',
+                    'actors': movie.actors or '',
+                    'coverUrl': movie.cover_url or '',
+                    'publishYear': movie.publish_year or 0,
+                    'language': movie.language or '',
+                    'writers': movie.writers or '',
+                    'pubDate': movie.pub_date or '',
+                    'wishCount': movie.wish_count or 0,
+                    'viewCount': movie.view_count or 0,
+                    'reviewsCount': movie.reviews_count or 0,
+                    'similarityScore': 0.0  # 默认相似度分数
+                }
+                rows.append(movie_data)
+
+            print(f"按评分排序查询返回: {len(rows)} 条记录，总数: {total_count}")
+            return {'rows': rows, 'total': total_count}
+
+        except Exception as e:
+            LogUtil.logger.error(f"获取评分排序电影分页列表时出错: {e}")
+            import traceback
+            traceback.print_exc()
+            return {'rows': [], 'total': 0}
+
+    @classmethod
     def get_user_recommendations_paginated(cls, user_id: int, page_num: int = 1, page_size: int = 10) -> Dict:
         """
         获取用户的分页推荐内容，自动处理推荐模型的生成和更新
@@ -974,8 +1025,8 @@ class RecommendService:
             # 获取用户最新的推荐记录
             recommend = RecommendMapper.select_user_recommend_history(user_id)
             if not recommend or not recommend.content:
-                LogUtil.logger.info(f"用户 {user_id} 没有推荐记录，返回空结果")
-                return {'rows': [], 'total': 0}
+                LogUtil.logger.info(f"用户 {user_id} 没有推荐记录，返回按评分排序的电影")
+                return cls.get_top_rated_movies_paginated(page_num, page_size)
 
             # 解析存储的电影ID和分数列表
             try:

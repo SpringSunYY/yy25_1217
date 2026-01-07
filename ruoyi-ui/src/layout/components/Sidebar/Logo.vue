@@ -35,7 +35,7 @@ export default {
   },
   data() {
     return {
-      title: '若依管理系统',
+      title: '电影推荐系统',
       logo: logoImg
     }
   }
