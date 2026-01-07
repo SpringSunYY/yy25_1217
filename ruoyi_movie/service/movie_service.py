@@ -10,6 +10,7 @@ from typing import List
 from ruoyi_common.exception import ServiceException
 from ruoyi_common.utils.base import LogUtil
 from ruoyi_common.utils.security_util import get_user_id
+from ruoyi_framework.descriptor import custom_cacheable
 from ruoyi_movie.domain.entity import Movie
 from ruoyi_movie.domain.entity.movie import MovieDetailDto
 from ruoyi_movie.mapper import MovieReviewMapper, LikeMapper
@@ -222,7 +223,11 @@ class MovieService:
             int: 删除的记录数
         """
         return MovieMapper.delete_movie_by_ids(ids)
-
+    @custom_cacheable(
+        key_prefix="movie:search:list",
+        expire_time=60 * 5,
+        use_query_params_as_key=True,
+    )
     def search_movies(self, search_dto) -> List[Movie]:
         """
         电影搜索方法
@@ -275,6 +280,11 @@ class MovieService:
 
         return MovieMapper.search_movies(movie_entity)
 
+    @custom_cacheable(
+        key_prefix="movie:search:options",
+        use_query_params_as_key=True,
+        expire_time=60 * 5
+    )
     def get_search_options(self) -> dict:
         """
         获取搜索选项（类型、国家地区等）

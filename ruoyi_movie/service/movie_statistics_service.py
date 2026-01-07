@@ -1,5 +1,6 @@
 from typing import List
 
+from ruoyi_framework.descriptor import custom_cacheable
 from ruoyi_movie.domain.entity import Movie
 from ruoyi_movie.domain.statistics.vo import StatisticsVo
 from ruoyi_movie.domain.statistics.vo.statistics_vo import PieBarStatisticsVo
@@ -10,6 +11,11 @@ class MovieStatisticsService:
     """电影统计分析"""
 
     @classmethod
+    @custom_cacheable(
+        key_prefix="movie:statistics:actor:rank",
+        use_query_params_as_key=True,
+        expire_time=5 * 60
+    )
     def actor_rank_statistics(cls, request) -> List[StatisticsVo]:
         """演员票房排行"""
         pos = MovieStatisticsMapper.actor_rank_statistics(request)
@@ -33,6 +39,11 @@ class MovieStatisticsService:
         return [StatisticsVo[int](name=name, value=value, tooltipText="", moreInfo="") for name, value in result]
 
     @classmethod
+    @custom_cacheable(
+        key_prefix="movie:statistics:director:rank",
+        use_query_params_as_key=True,
+        expire_time=5 * 60
+    )
     def director_rank_statistics(cls, request) -> List[StatisticsVo]:
         """导演评分排行"""
         pos = MovieStatisticsMapper.director_rank_statistics(request)
@@ -57,11 +68,21 @@ class MovieStatisticsService:
                 result]
 
     @classmethod
+    @custom_cacheable(
+        key_prefix="movie:statistics:movie:rank",
+        use_query_params_as_key=True,
+        expire_time=5 * 60
+    )
     def movie_rank_statistics(cls, request) -> List[Movie]:
         """电影排行"""
         return MovieStatisticsMapper.movie_rank_statistics(request)
 
     @classmethod
+    @custom_cacheable(
+        key_prefix="movie:statistics:genres:rank",
+        use_query_params_as_key=True,
+        expire_time=5 * 60
+    )
     def genres_rank_statistics(cls, request) -> List[PieBarStatisticsVo]:
         """电影类型排行"""
         pos = MovieStatisticsMapper.genres_rank_statistics(request)

@@ -91,7 +91,7 @@ import {
 } from "@/api/movie/statistics";
 
 export default {
-  name: 'Index',
+  name: 'MovieStatistics',
   components: {
     PieBarRankingCharts,
     TableRanking,
@@ -203,7 +203,7 @@ export default {
           [type]: item.name
         }
       });
-      window.open(routeData.href, '_blank');  
+      window.open(routeData.href, '_blank');
     },
     //点击分类
     handlePieChartClick(item) {
