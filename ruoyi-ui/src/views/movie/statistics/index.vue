@@ -2,6 +2,19 @@
   <div class="app-container">
     <el-row>
       <el-col :span="24">
+        <p style="font-size: 48px;text-align: center;color: white;font-weight: bold">电影数据排行分析</p>
+        <el-date-picker
+          v-model="dataRange"
+          value-format="yyyy-MM-dd"
+          type="daterange"
+          range-separator="-"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+        ></el-date-picker>
+        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+      </el-col>
+      <el-col :span="24">
         <div class="chart-wrapper">
           <PieBarRankingCharts
             :chart-data="genresRankStatisticsData"
@@ -11,7 +24,10 @@
         </div>
       </el-col>
       <el-col :span="8">
-        <div class="chart-wrapper"></div>
+        <div class="chart-wrapper">
+          <p class="chart-title">导演评分排行</p>
+          <p class="chart-content">导演评分排行是根据导演的电影评分的平均分进行排行的，点击相关的导演可以搜索导演相关电影</p>
+        </div>
       </el-col>
       <el-col :span="16">
         <div class="chart-wrapper">
@@ -30,10 +46,16 @@
         </div>
       </el-col>
       <el-col :span="8">
-        <div class="chart-wrapper"></div>
+        <div class="chart-wrapper">
+          <p class="chart-title">演员播放排行</p>
+          <p class="chart-content">演员播放排行是根据演员参与的电影放次数进行排行的，点击相关的演员可以搜索演员相关电影</p>
+        </div>
       </el-col>
       <el-col :span="8">
-        <div class="chart-wrapper"></div>
+        <div class="chart-wrapper">
+          <p class="chart-title">电影播放排行</p>
+          <p class="chart-content">演员播放排行是根据演员参与的电影放次数进行排行的，点击相关的电影可以查看电影详情</p>
+        </div>
       </el-col>
       <el-col :span="16">
         <div class="chart-wrapper">
@@ -117,14 +139,26 @@ export default {
     getStatisticsData() {
       if (this.dataRange.length && this.dataRange.length >= 1) {
         this.queryParams = {
-          start_time: this.dataRange[0],
-          end_time: this.dataRange[1]
+          startTime: this.dataRange[0],
+          endTime: this.dataRange[1]
         }
       }
       this.getActorRankStatistics();
       this.getDirectorRankStatistics();
       this.getMovieTableData();
       this.getGenresRankStatistics();
+    },
+    //搜索电影
+    handleQuery(){
+      this.getStatisticsData();
+    },
+    resetQuery() {
+      this.dataRange = [];
+      this.queryParams = {
+        countNumber: 300,
+        genres: ""
+      };
+      this.getStatisticsData();
     },
     getActorRankStatistics() {
       getActorRankStatistics(this.queryParams).then(res => {
@@ -178,6 +212,18 @@ export default {
   height: 40vh;
   padding: 16px 16px 0;
   margin-bottom: 32px;
+}
+
+.chart-title {
+  color: white;
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 16px;
+}
+
+.chart-content {
+  color: white;
+  font-size: 24px;
 }
 
 @media (max-width: 1024px) {

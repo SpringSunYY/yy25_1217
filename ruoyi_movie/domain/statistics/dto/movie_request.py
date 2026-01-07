@@ -1,12 +1,13 @@
 from typing import Optional, Annotated
 
-from pydantic import Field, BaseModel, BeforeValidator
+from pydantic import Field, BeforeValidator
 
+from ruoyi_common.base.model import BaseEntity
 from ruoyi_common.base.schema_vo import VoField
 from ruoyi_common.base.transformer import str_to_int
 
 
-class MovieStatisticsRequest(BaseModel):
+class MovieStatisticsRequest(BaseEntity):
     # 开始时间
     start_time: Annotated[
         Optional[str],

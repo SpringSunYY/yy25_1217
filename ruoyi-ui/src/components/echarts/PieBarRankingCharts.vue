@@ -70,6 +70,12 @@ export default {
       handler(newVal) {
         if (newVal && newVal.length > 0) {
           this.initActiveData();
+          if (this.activeIndustry) {
+            const activeItem = newVal.find(item => item.name === this.activeIndustry);
+            if (activeItem) {
+              this.currentBarData = [...activeItem.values].sort((a, b) => b.value - a.value);
+            }
+          }
           this.currentIndex = 0;
           this.renderChart();
           this.resetRotation();

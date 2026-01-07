@@ -16,6 +16,7 @@ movie_statistics_service = MovieStatisticsService()
 @JsonSerializer()
 def actor_rank_statistics(request: MovieStatisticsRequest):
     """演员票房排行"""
+    print(request)
     request_entity=MovieStatisticsRequest()
     for attr in request.model_fields.keys():
         if hasattr(request_entity, attr):
