@@ -3,11 +3,12 @@
 # @FileName: movie_mapper.py
 # @Time    : 2025-12-21 18:49:53
 
+import re
 from datetime import datetime
 from typing import List, Optional
 
 from flask import g
-from sqlalchemy import select, delete, and_, or_, desc, asc
+from sqlalchemy import select, delete, and_, or_, desc, asc, func
 
 from ruoyi_admin.ext import db
 from ruoyi_common.utils.base import LogUtil
@@ -211,6 +212,88 @@ class MovieMapper:
             return 0
 
     @staticmethod
+    def _build_person_search_condition(column, search_term: str):
+        """
+        构建人名搜索条件，支持中英文混合搜索
+
+        Args:
+            column: 数据库列
+            search_term: 搜索词
+
+        Returns:
+            搜索条件
+        """
+        if not search_term or not search_term.strip():
+            return None
+
+        search_term = search_term.strip()
+        conditions = []
+
+        # 1. 原始搜索词的完整匹配 - 最基本的匹配
+        conditions.append(column.like("%" + search_term + "%"))
+
+        # 2. 处理中文人名 - 更宽泛的匹配
+        import re
+        if re.search(r'[\u4e00-\u9fff]', search_term):
+            # 去除所有标点符号的版本
+            clean_term = re.sub(r'[·•・\s\-\._\(\)\[\]\{\}《》""''「」]+', '', search_term)
+            if clean_term != search_term and len(clean_term) > 1:
+                conditions.append(column.like("%" + clean_term + "%"))
+
+            # 将中文标点替换为空格或通配符
+            relaxed_term = re.sub(r'[·•・]', ' ', search_term)
+            if relaxed_term != search_term:
+                conditions.append(column.like("%" + relaxed_term + "%"))
+
+            # 更激进的匹配：允许标点处有任意字符
+            wildcard_term = re.sub(r'[·•・]', '%', search_term)
+            if wildcard_term != search_term:
+                conditions.append(column.like("%" + wildcard_term + "%"))
+
+        # 3. 通用分词处理 - 对所有搜索词都进行分词
+        separators = r'[\s·•・\-_\.\(\)\[\]\{\}《》""''「」\u00b7\u2027\u30fb]+'
+        words = re.split(separators, search_term)
+
+        # 过滤掉空字符串和单字符
+        words = [word.strip() for word in words if word.strip() and len(word.strip()) > 1]
+
+        if len(words) > 1:
+            # OR条件：只要匹配任意一个分词即可 - 更宽松
+            for word in words:
+                conditions.append(column.like("%" + word + "%"))
+
+            # AND条件：所有分词都要匹配 - 更精确
+            if len(words) <= 3:  # 避免分词太多导致的性能问题
+                from sqlalchemy import and_
+                word_conditions = [column.like("%" + word + "%") for word in words]
+                conditions.append(and_(*word_conditions))
+
+        # 4. 特殊处理：如果是两个词，尝试各种组合
+        if len(words) == 2:
+            word1, word2 = words[0], words[1]
+
+            # word1在前，word2在后（中间允许任意字符）
+            conditions.append(column.like("%" + word1 + "%" + word2 + "%"))
+
+            # word2在前，word1在后
+            conditions.append(column.like("%" + word2 + "%" + word1 + "%"))
+
+            # 英文人名的特殊处理：如果是英文，尝试忽略大小写
+            if re.search(r'[a-zA-Z]', word1) and re.search(r'[a-zA-Z]', word2):
+                # 第一个词的首字母大写版本
+                if word1[0].islower():
+                    capitalized1 = word1[0].upper() + word1[1:]
+                    conditions.append(column.like("%" + capitalized1 + "%" + word2 + "%"))
+                    conditions.append(column.like("%" + word2 + "%" + capitalized1 + "%"))
+
+                if word2[0].islower():
+                    capitalized2 = word2[0].upper() + word2[1:]
+                    conditions.append(column.like("%" + word1 + "%" + capitalized2 + "%"))
+                    conditions.append(column.like("%" + capitalized2 + "%" + word1 + "%"))
+
+        return or_(*conditions) if conditions else None
+
+    @staticmethod
     def search_movies(movie: Movie) -> List[Movie]:
         """
         电影搜索方法
@@ -227,7 +310,38 @@ class MovieMapper:
 
             # 搜索条件
             if movie.title:
-                stmt = stmt.where(MoviePo.title.like("%" + str(movie.title) + "%"))
+                title = str(movie.title).strip()
+                # 电影标题搜索也使用智能匹配
+                title_conditions = []
+
+                # 1. 完整匹配
+                title_conditions.append(MoviePo.title.like("%" + title + "%"))
+
+                # 2. 如果包含中文，进行一些变体搜索
+                import re
+                if re.search(r'[\u4e00-\u9fff]', title):
+                    # 去除常见标点和空格
+                    clean_title = re.sub(r'[《》""''（）()【】\[\]「」\s]', '', title)
+                    if clean_title != title:
+                        title_conditions.append(MoviePo.title.like("%" + clean_title + "%"))
+
+                    # 去除书名号等
+                    no_bookmarks = re.sub(r'[《》]', '', title)
+                    if no_bookmarks != title and no_bookmarks != clean_title:
+                        title_conditions.append(MoviePo.title.like("%" + no_bookmarks + "%"))
+
+                # 3. 按空格分割的词都要匹配（用于英文标题或中英文混合）
+                words = title.split()
+                if len(words) > 1:
+                    word_conditions = []
+                    for word in words:
+                        word = word.strip()
+                        if word:
+                            word_conditions.append(MoviePo.title.like("%" + word + "%"))
+                    if word_conditions:
+                        title_conditions.append(and_(*word_conditions))
+
+                stmt = stmt.where(or_(*title_conditions))
 
             if movie.genres:
                 # 类型搜索，支持多个类型，用逗号分隔
@@ -247,12 +361,15 @@ class MovieMapper:
                         country_conditions.append(MoviePo.country.like("%" + country + "%"))
                     stmt = stmt.where(or_(*country_conditions))
 
+            # 导演搜索 - 使用简单LIKE匹配
             if movie.directors:
                 stmt = stmt.where(MoviePo.directors.like("%" + str(movie.directors) + "%"))
 
+            # 编剧搜索 - 使用简单LIKE匹配
             if movie.writers:
                 stmt = stmt.where(MoviePo.writers.like("%" + str(movie.writers) + "%"))
 
+            # 主演搜索 - 使用简单LIKE匹配
             if movie.actors:
                 stmt = stmt.where(MoviePo.actors.like("%" + str(movie.actors) + "%"))
 
@@ -290,9 +407,87 @@ class MovieMapper:
             else:
                 stmt = stmt.order_by(desc(sort_column))
 
-            # 分页
+            # 分页处理 - 必须在最后设置page.stmt，避免监听器冲突
             if "criterian_meta" in g and g.criterian_meta.page:
-                g.criterian_meta.page.stmt = stmt
+                page = g.criterian_meta.page
+
+                # 重新构建查询条件来计算总数（排除排序）
+                count_stmt = select(func.count(MoviePo.id))
+
+                # 复制所有where条件
+                if movie.title:
+                    title = str(movie.title).strip()
+                    title_conditions = []
+                    title_conditions.append(MoviePo.title.like("%" + title + "%"))
+                    if re.search(r'[\u4e00-\u9fff]', title):
+                        clean_title = re.sub(r'[《》""''（）()【】\[\]「」\s]', '', title)
+                        if clean_title != title:
+                            title_conditions.append(MoviePo.title.like("%" + clean_title + "%"))
+                        no_bookmarks = re.sub(r'[《》]', '', title)
+                        if no_bookmarks != title and no_bookmarks != clean_title:
+                            title_conditions.append(MoviePo.title.like("%" + no_bookmarks + "%"))
+                    words = title.split()
+                    if len(words) > 1:
+                        word_conditions = []
+                        for word in words:
+                            word = word.strip()
+                            if word:
+                                word_conditions.append(MoviePo.title.like("%" + word + "%"))
+                        if word_conditions:
+                            title_conditions.append(and_(*word_conditions))
+                    count_stmt = count_stmt.where(or_(*title_conditions))
+
+                if movie.genres:
+                    genres_list = [g.strip() for g in movie.genres.split(',') if g.strip()]
+                    if genres_list:
+                        genre_conditions = []
+                        for genre in genres_list:
+                            genre_conditions.append(MoviePo.genres.like("%" + genre + "%"))
+                        count_stmt = count_stmt.where(or_(*genre_conditions))
+
+                if movie.country:
+                    countries = [c.strip() for c in movie.country.split('/') if c.strip()]
+                    if countries:
+                        country_conditions = []
+                        for country in countries:
+                            country_conditions.append(MoviePo.country.like("%" + country + "%"))
+                        count_stmt = count_stmt.where(or_(*country_conditions))
+
+                if movie.directors:
+                    count_stmt = count_stmt.where(MoviePo.directors.like("%" + str(movie.directors) + "%"))
+
+                if movie.writers:
+                    count_stmt = count_stmt.where(MoviePo.writers.like("%" + str(movie.writers) + "%"))
+
+                if movie.actors:
+                    count_stmt = count_stmt.where(MoviePo.actors.like("%" + str(movie.actors) + "%"))
+
+                # 年份筛选
+                year_start = getattr(movie, 'publish_year_start', None)
+                year_end = getattr(movie, 'publish_year_end', None)
+                publish_year = getattr(movie, 'publish_year', None)
+
+                if publish_year is not None:
+                    count_stmt = count_stmt.where(MoviePo.publish_year == publish_year)
+                elif year_start is not None and year_end is not None:
+                    if year_start == year_end:
+                        count_stmt = count_stmt.where(MoviePo.publish_year == year_start)
+                    else:
+                        count_stmt = count_stmt.where(and_(MoviePo.publish_year >= year_start, MoviePo.publish_year <= year_end))
+
+                try:
+                    total_result = db.session.execute(count_stmt).scalar()
+                    page.total = total_result or 0
+                except Exception as e:
+                    print(f"总数计算错误: {e}")
+                    page.total = 0
+
+                # 应用分页
+                offset_val = (page.page_num - 1) * page.page_size
+                stmt = stmt.offset(offset_val).limit(page.page_size)
+
+                # 设置page.stmt用于TableResponse，但不要让监听器处理
+                # page.stmt = stmt
 
             result = db.session.execute(stmt).scalars().all()
             return [Movie.model_validate(item) for item in result] if result else []

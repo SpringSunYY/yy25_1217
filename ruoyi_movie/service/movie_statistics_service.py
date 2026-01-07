@@ -77,7 +77,7 @@ class MovieStatisticsService:
                     result[genre] = po.value
                 else:
                     result[genre] += po.value
-        #只要前十，按票房总和降序排序后取前10个
+        # 只要前十，按票房总和降序排序后取前10个
         result = dict(sorted(result.items(), key=lambda x: x[1], reverse=True)[:10])
         # 遍历结果，拿到每个类型里面的电影排行
         result_list = []
@@ -86,6 +86,8 @@ class MovieStatisticsService:
             movies = MovieStatisticsMapper.movie_rating_rank_statistics(request)
             values = []
             for movie in movies:
-                values.append(StatisticsVo[float](name=movie.title, value=round(movie.rating, 2) if movie.rating else 0.0, tooltipText="", moreInfo=""))
+                values.append(
+                    StatisticsVo[float](name=movie.title, value=round(movie.rating, 2) if movie.rating else 0.0,
+                                        tooltipText="", moreInfo="", movieId=movie.movie_id))
             result_list.append(PieBarStatisticsVo(name=key, tooltipText="", value=total_value, values=values))
         return result_list

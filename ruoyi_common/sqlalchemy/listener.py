@@ -53,7 +53,12 @@ def before_execute_listening(engine, clauseelement, multiparams,params) -> Tuple
         )
         
         new_clauseelement = pagination.rebuild(clauseelement)
-        page.total = pagination.compute_count(clauseelement,engine)
+        # 计算总数需要使用session而不是engine
+        if has_app_context():
+            from ruoyi_admin.ext import db
+            page.total = pagination.compute_count(clauseelement, db.session)
+        else:
+            page.total = 0
         new_output = new_clauseelement, multiparams, params
         return new_output
     return raw_input

@@ -371,11 +371,11 @@
 
 <script>
 
-import {getMovieDetail, getMovieSearchOptions, searchMovie} from '@/api/movie/movie'
+import {getMovieSearchOptions, searchMovie} from '@/api/movie/movie'
 import ImagePreview from "@/components/ImagePreview/index.vue";
 
 export default {
-  name: 'Index',
+  name: 'MovieQuery',
   components: {ImagePreview},
   // 添加缓存key确保keep-alive稳定性
   key: 'movie-search-index',
@@ -425,8 +425,14 @@ export default {
       showAllCountries: false,
       // 搜索状态
       searching: false,
+      // 防止重复搜索的标志
+      searchPending: false,
       // 无限滚动观察器
       observer: null,
+      // 观察器是否激活
+      observerActive: false,
+      // 滚动监听器
+      scrollListener: null,
       // 滚动位置保存
       savedScrollTop: 0
     }
@@ -453,6 +459,8 @@ export default {
     this.ensurePageScrollable()
     // 初始化无限滚动
     this.setupIntersectionObserver()
+    // 添加滚动事件监听
+    this.setupScrollListener()
   },
 
   activated() {
@@ -466,9 +474,9 @@ export default {
           window.scrollTo(0, this.savedScrollTop)
         }
       })
-      // 重新连接观察器
-      if (this.observer && this.$refs.loadTrigger) {
-        this.observer.observe(this.$refs.loadTrigger)
+      // 重新添加滚动监听器
+      if (!this.scrollListener) {
+        this.setupScrollListener()
       }
     })
   },
@@ -478,6 +486,21 @@ export default {
     this.savedScrollTop = window.pageYOffset || document.documentElement.scrollTop
     if (this.observer) {
       this.observer.disconnect()
+      this.observerActive = false
+    }
+    // 移除滚动监听器
+    if (this.scrollListener) {
+      window.removeEventListener('scroll', this.scrollListener)
+    }
+  },
+
+  beforeDestroy() {
+    // 清理资源
+    if (this.observer) {
+      this.observer.disconnect()
+    }
+    if (this.scrollListener) {
+      window.removeEventListener('scroll', this.scrollListener)
     }
   },
 
@@ -491,9 +514,105 @@ export default {
 
   created() {
     this.getSearchOptions()
+    this.initSearchFromQuery()
     this.handleSearch()
   },
   methods: {
+    // 从URL查询参数初始化搜索条件
+    initSearchFromQuery() {
+      const query = this.$route.query
+
+      // 重置分页参数到第一页
+      this.searchParams.pageNum = 1
+      this.searchParams.pageSize = 20
+
+      // 处理电影名称
+      if (query.title) {
+        this.searchParams.title = decodeURIComponent(query.title)
+      } else {
+        this.searchParams.title = ''
+      }
+
+      // 处理导演
+      if (query.directors || query.director) {
+        this.searchParams.directors = decodeURIComponent(query.directors || query.director)
+      } else {
+        this.searchParams.directors = ''
+      }
+
+      // 处理编剧
+      if (query.writers || query.writer) {
+        this.searchParams.writers = decodeURIComponent(query.writers || query.writer)
+      } else {
+        this.searchParams.writers = ''
+      }
+
+      // 处理主演
+      if (query.actors || query.actor) {
+        this.searchParams.actors = decodeURIComponent(query.actors || query.actor)
+      } else {
+        this.searchParams.actors = ''
+      }
+
+      // 处理类型（支持逗号分隔的字符串或数组）
+      if (query.genres || query.genre) {
+        const genresStr = query.genres || query.genre
+        if (typeof genresStr === 'string') {
+          this.searchParams.genres = genresStr.split(',').filter(g => g.trim())
+        } else if (Array.isArray(genresStr)) {
+          this.searchParams.genres = genresStr
+        }
+      } else {
+        this.searchParams.genres = []
+      }
+
+      // 处理国家地区（支持逗号分隔的字符串或数组）
+      if (query.countries || query.country) {
+        const countriesStr = query.countries || query.country
+        if (typeof countriesStr === 'string') {
+          this.searchParams.countries = countriesStr.split('/').filter(c => c.trim())
+        } else if (Array.isArray(countriesStr)) {
+          this.searchParams.countries = countriesStr
+        }
+      } else {
+        this.searchParams.countries = []
+      }
+
+      // 处理年份范围
+      if (query.yearRange || query.year_range) {
+        this.searchParams.yearRange = query.yearRange || query.year_range
+      } else {
+        this.searchParams.yearRange = ''
+      }
+
+      // 处理排序
+      if (query.sortField || query.sort_field) {
+        this.searchParams.sortField = query.sortField || query.sort_field
+      } else {
+        this.searchParams.sortField = 'view_count'
+      }
+      if (query.sortOrder || query.sort_order) {
+        this.searchParams.sortOrder = query.sortOrder || query.sort_order
+      } else {
+        this.searchParams.sortOrder = 'desc'
+      }
+
+      // 分页参数总是重置（从URL跳转时应该从第1页开始）
+      // 如果需要支持URL中的分页参数，可以取消注释下面的代码
+      // if (query.pageNum || query.page_num) {
+      //   const pageNum = parseInt(query.pageNum || query.page_num)
+      //   if (!isNaN(pageNum) && pageNum > 0) {
+      //     this.searchParams.pageNum = pageNum
+      //   }
+      // }
+      // if (query.pageSize || query.page_size) {
+      //   const pageSize = parseInt(query.pageSize || query.page_size)
+      //   if (!isNaN(pageSize) && pageSize > 0) {
+      //     this.searchParams.pageSize = pageSize
+      //   }
+      // }
+    },
+
     // 获取搜索选项
     getSearchOptions() {
       getMovieSearchOptions().then(response => {
@@ -507,11 +626,23 @@ export default {
 
     // 处理搜索
     handleSearch() {
+      // 防止重复搜索
+      if (this.searchPending) {
+        return
+      }
+
       // 防抖处理
       if (this.searchTimer) {
         clearTimeout(this.searchTimer)
       }
+
       this.searchTimer = setTimeout(() => {
+        // 再次检查，防止在延时期间有新的搜索请求
+        if (this.searchPending) {
+          return
+        }
+
+        this.searchPending = true
         this.searchParams.pageNum = 1
         this.movieList = []
         this.hasMore = true
@@ -565,12 +696,17 @@ export default {
       if (this.loading && !this.loadingMore) return
 
       const params = {
-        ...this.searchParams,
+        title: this.searchParams.title,
         genres: this.searchParams.genres.join(','),
         country: this.searchParams.countries.join('/'),
+        directors: this.searchParams.directors,
+        writers: this.searchParams.writers,
+        actors: this.searchParams.actors,
         year_range: this.searchParams.yearRange,
         sort_field: this.searchParams.sortField,
-        sort_order: this.searchParams.sortOrder
+        sort_order: this.searchParams.sortOrder,
+        pageNum: this.searchParams.pageNum,
+        pageSize: this.searchParams.pageSize
       }
 
       this.loading = !this.loadingMore
@@ -596,13 +732,10 @@ export default {
         this.loading = false
         this.loadingMore = false
         this.searching = false
+        this.searchPending = false
 
-        // 重新观察加载触发器
-        this.$nextTick(() => {
-          if (this.observer && this.$refs.loadTrigger && this.hasMore) {
-            this.observer.observe(this.$refs.loadTrigger)
-          }
-        })
+        // 不自动重新连接观察器，避免误触发
+        // 观察器会在用户真正滚动时通过滚动事件连接
       })
     },
 
@@ -643,11 +776,40 @@ export default {
 
     // 加载更多
     loadMore() {
-      if (!this.hasMore || this.loadingMore) return
+      // 防止页面初始化时的误触发
+      if (!this.hasMore || this.loadingMore || this.movieList.length === 0) return
+
+      // 检查是否真的需要加载更多（页面底部接近可见）
+      const loadTrigger = this.$refs.loadTrigger
+      if (loadTrigger) {
+        const rect = loadTrigger.getBoundingClientRect()
+        const isNearBottom = rect.top <= window.innerHeight + 200 // 200px阈值
+        if (!isNearBottom) return
+      }
 
       this.searchParams.pageNum++
       this.loadingMore = true
       this.searchMovies()
+    },
+
+    // 设置滚动监听器
+    setupScrollListener() {
+      this.scrollListener = () => {
+        if (this.hasMore && this.movieList.length > 0 && !this.loadingMore) {
+          const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+          const windowHeight = window.innerHeight
+          const documentHeight = document.documentElement.scrollHeight
+
+          // 当滚动到距离底部200px时，连接观察器
+          if (scrollTop + windowHeight >= documentHeight - 200) {
+            if (this.observer && this.$refs.loadTrigger && !this.observerActive) {
+              this.observer.observe(this.$refs.loadTrigger)
+              this.observerActive = true
+            }
+          }
+        }
+      }
+      window.addEventListener('scroll', this.scrollListener, { passive: true })
     },
 
     // 处理电影点击

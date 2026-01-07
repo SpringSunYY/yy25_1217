@@ -9,17 +9,18 @@ class StatisticsVo(BaseModel, Generic[T]):
     """
     统计总数对象
     """
-    value: T
-    name: str
-    tooltipText: str
-    moreInfo: str
+    value: Optional[T] = None
+    name: Optional[str] = ''
+    tooltipText: Optional[str] = ''
+    moreInfo: Optional[str] = ''
+    movieId: Optional[int] = None
 
 
 class PieBarStatisticsVo(BaseModel):
     """
     饼状图统计对象
     """
-    name: str
-    tooltipText: str
-    value:int
+    name: Optional[str] = ''
+    tooltipText: Optional[str] = ''
+    value: Optional[int] = None
     values: List[StatisticsVo]

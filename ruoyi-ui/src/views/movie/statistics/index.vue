@@ -25,14 +25,15 @@
           <PieBarRankingCharts
             :chart-data="genresRankStatisticsData"
             :chart-title="genresRankStatisticsName"
-            @bar-click="handleChartClick"
+            @bar-click="handleToMovieDetail"
             @pie-click="handlePieChartClick"/>
         </div>
       </el-col>
       <el-col :span="8">
         <div class="chart-wrapper">
           <p class="chart-title">导演评分排行</p>
-          <p class="chart-content">导演评分排行是根据导演执导的电影评分的平均分进行排行的，点击相关的导演可以搜索导演相关电影</p>
+          <p class="chart-content">
+            导演评分排行是根据导演执导的电影评分的平均分进行排行的，点击相关的导演可以搜索导演相关电影</p>
         </div>
       </el-col>
       <el-col :span="16">
@@ -40,7 +41,7 @@
           <BarRankingCharts direction="left"
                             :chart-data="directorRankStatisticsData"
                             :chart-title="directorRankStatisticsName"
-                            @item-click="handleChartClick"/>
+                            @item-click="(item) => handleToQuery(item, 'director')"/>
         </div>
       </el-col>
       <el-col :span="16">
@@ -48,13 +49,14 @@
           <BarRankingCharts
             :chart-data="actorRankStatisticsData"
             :chart-title="actorRankStatisticsName"
-            @item-click="handleChartClick"/>
+            @item-click="(item) => handleToQuery(item, 'actor')"/>
         </div>
       </el-col>
       <el-col :span="8">
         <div class="chart-wrapper">
           <p class="chart-title">演员播放排行</p>
-          <p class="chart-content">演员播放排行是根据演员参演的电影播放总次数进行排行的，点击相关的演员可以搜索演员相关电影</p>
+          <p class="chart-content">
+            演员播放排行是根据演员参演的电影播放总次数进行排行的，点击相关的演员可以搜索演员相关电影</p>
         </div>
       </el-col>
       <el-col :span="8">
@@ -68,7 +70,7 @@
           <TableRanking
             :data="movieTableData"
             :columns="movieTableColumns"
-            @rowClicked="handleChartClick"/>
+            @rowClicked="handleToMovieDetail"/>
         </div>
       </el-col>
     </el-row>
@@ -155,7 +157,7 @@ export default {
       this.getGenresRankStatistics();
     },
     //搜索电影
-    handleQuery(){
+    handleQuery() {
       this.getStatisticsData();
     },
     resetQuery() {
@@ -188,8 +190,20 @@ export default {
         this.genresRankStatisticsData = res.data;
       })
     },
-    handleChartClick(item) {
-      console.log(item)
+    //跳转查询
+    handleToQuery(item,type) {
+      if (!item || !item.name) {
+        return
+      }
+      console.log(item,type)
+      //跳转查询
+      const routeData=this.$router.resolve({
+        name: 'MovieQuery',
+        query: {
+          [type]: item.name
+        }
+      });
+      window.open(routeData.href, '_blank');  
     },
     //点击分类
     handlePieChartClick(item) {
@@ -197,6 +211,18 @@ export default {
       this.getActorRankStatistics();
       this.getDirectorRankStatistics();
       this.getMovieTableData();
+    },
+    //跳转详情
+    handleToMovieDetail(item) {
+      if (!item || !item.movieId) {
+        return
+      }
+      // 跳转到电影详情页
+      const routeData = this.$router.resolve({
+        name: 'MovieDetail',
+        params: {movieId: item.movieId}
+      });
+      window.open(routeData.href, '_blank');
     }
   }
 }

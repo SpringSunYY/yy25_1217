@@ -94,6 +94,7 @@ export default {
       this.chart = echarts.init(this.$refs.chartRef);
       this.renderChart();
       this.startRotation();
+      this.initChartEvents();
     },
 
     // 3. 核心渲染函数：根据 currentIndex 切片数据
@@ -263,7 +264,20 @@ export default {
         this.prevPage();
       }
     },
+    // 添加到 点击事件 中
+    initChartEvents() {
+      this.chart.on('click', (params) => {
+        if (params.componentType === 'series') {
+          // 计算真实数据索引（考虑轮播偏移）
+          const len = this.sortedData.length;
+          const realIndex = (this.currentIndex + params.dataIndex) % len;
+          const itemData = this.sortedData[realIndex];
 
+          // 触发自定义事件传递数据给父组件
+          this.$emit('item-click', itemData);
+        }
+      });
+    },
     handleResize() {
       if (this.chart) {
         this.chart.resize();

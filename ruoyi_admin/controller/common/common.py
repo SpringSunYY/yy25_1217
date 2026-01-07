@@ -146,14 +146,35 @@ def common_proxy_image(
                 }
             )
         else:
-            return AjaxResponse.from_error(f"获取图片失败: {response.status_code}")
+            # 返回错误图片或错误响应
+            return Response(
+                b"Image not available",
+                status=response.status_code,
+                mimetype='text/plain',
+                headers={'Access-Control-Allow-Origin': '*'}
+            )
 
     except requests.exceptions.Timeout:
-        return AjaxResponse.from_error("图片加载超时")
+        return Response(
+            b"Image load timeout",
+            status=408,
+            mimetype='text/plain',
+            headers={'Access-Control-Allow-Origin': '*'}
+        )
     except requests.exceptions.RequestException as e:
-        return AjaxResponse.from_error(f"图片加载失败: {str(e)}")
+        return Response(
+            f"Image load failed: {str(e)}".encode(),
+            status=502,
+            mimetype='text/plain',
+            headers={'Access-Control-Allow-Origin': '*'}
+        )
     except Exception as e:
-        return AjaxResponse.from_error(f"服务器错误: {str(e)}")
+        return Response(
+            f"Server error: {str(e)}".encode(),
+            status=500,
+            mimetype='text/plain',
+            headers={'Access-Control-Allow-Origin': '*'}
+        )
 
 
 @reg.api.route(f"{Constants.RESOURCE_PREFIX}/<path:resource>")
