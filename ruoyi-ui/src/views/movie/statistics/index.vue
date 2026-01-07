@@ -2,17 +2,23 @@
   <div class="app-container">
     <el-row>
       <el-col :span="24">
-        <p style="font-size: 48px;text-align: center;color: white;font-weight: bold">电影数据排行分析</p>
-        <el-date-picker
-          v-model="dataRange"
-          value-format="yyyy-MM-dd"
-          type="daterange"
-          range-separator="-"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-        ></el-date-picker>
-        <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
-        <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="flex: 1; display: flex; justify-content: center;">
+            <p style="font-size: 48px;color: white;font-weight: bold;margin: 0;">电影数据排行分析</p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <el-date-picker
+              v-model="dataRange"
+              value-format="yyyy-MM-dd"
+              type="daterange"
+              range-separator="-"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+            ></el-date-picker>
+            <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
+            <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
+          </div>
+        </div>
       </el-col>
       <el-col :span="24">
         <div class="chart-wrapper">
@@ -26,7 +32,7 @@
       <el-col :span="8">
         <div class="chart-wrapper">
           <p class="chart-title">导演评分排行</p>
-          <p class="chart-content">导演评分排行是根据导演的电影评分的平均分进行排行的，点击相关的导演可以搜索导演相关电影</p>
+          <p class="chart-content">导演评分排行是根据导演执导的电影评分的平均分进行排行的，点击相关的导演可以搜索导演相关电影</p>
         </div>
       </el-col>
       <el-col :span="16">
@@ -48,13 +54,13 @@
       <el-col :span="8">
         <div class="chart-wrapper">
           <p class="chart-title">演员播放排行</p>
-          <p class="chart-content">演员播放排行是根据演员参与的电影放次数进行排行的，点击相关的演员可以搜索演员相关电影</p>
+          <p class="chart-content">演员播放排行是根据演员参演的电影播放总次数进行排行的，点击相关的演员可以搜索演员相关电影</p>
         </div>
       </el-col>
       <el-col :span="8">
         <div class="chart-wrapper">
           <p class="chart-title">电影播放排行</p>
-          <p class="chart-content">演员播放排行是根据演员参与的电影放次数进行排行的，点击相关的电影可以查看电影详情</p>
+          <p class="chart-content">电影播放排行是根据电影的播放次数进行排行的，点击相关的电影可以查看电影详情</p>
         </div>
       </el-col>
       <el-col :span="16">
@@ -210,8 +216,11 @@ export default {
 
 .chart-wrapper {
   height: 40vh;
-  padding: 16px 16px 0;
+  padding: 16px;
   margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .chart-title {
@@ -224,6 +233,7 @@ export default {
 .chart-content {
   color: white;
   font-size: 24px;
+  text-indent: 2em;
 }
 
 @media (max-width: 1024px) {
