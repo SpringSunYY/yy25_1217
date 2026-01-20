@@ -16,7 +16,7 @@ class MovieStatisticsService:
         use_query_params_as_key=True,
         expire_time=5 * 60
     )
-    def actor_rank_statistics(cls, request) -> List[StatisticsVo]:
+    def actor_rank_statistics(cls, request) -> List[StatisticsVo[int]]:
         """演员票房排行"""
         pos = MovieStatisticsMapper.actor_rank_statistics(request)
         # 构建返回结果，演员以/分割，所以需要清洗数据
@@ -36,7 +36,7 @@ class MovieStatisticsService:
         result = sorted(result.items(), key=lambda x: x[1], reverse=True)
         # 返回n条
         result = result[:request.count_number]
-        return [StatisticsVo(name=name, value=value, tooltipText="", moreInfo="") for name, value in result]
+        return [StatisticsVo[int](name=name, value=value, tooltipText="", moreInfo="") for name, value in result]
 
     @classmethod
     @custom_cacheable(
@@ -44,7 +44,7 @@ class MovieStatisticsService:
         use_query_params_as_key=True,
         expire_time=5 * 60
     )
-    def director_rank_statistics(cls, request) -> List[StatisticsVo]:
+    def director_rank_statistics(cls, request) -> List[StatisticsVo[float]]:
         """导演评分排行"""
         pos = MovieStatisticsMapper.director_rank_statistics(request)
         # 构建返回结果，导演以/分割，所以需要清洗数据
@@ -64,7 +64,7 @@ class MovieStatisticsService:
         # 根据value排序,并且保留两位小数
         result = sorted(result.items(), key=lambda x: x[1], reverse=True)
         result = result[:request.count_number]
-        return [StatisticsVo(name=name, value=round(value, 2), tooltipText="", moreInfo="") for name, value in
+        return [StatisticsVo[float](name=name, value=round(value, 2), tooltipText="", moreInfo="") for name, value in
                 result]
 
     @classmethod
@@ -108,7 +108,7 @@ class MovieStatisticsService:
             values = []
             for movie in movies:
                 values.append(
-                    StatisticsVo(name=movie.title, value=round(movie.rating, 2) if movie.rating else 0.0,
+                    StatisticsVo[float](name=movie.title, value=round(movie.rating, 2) if movie.rating else 0.0,
                                         tooltipText="", moreInfo="", movieId=movie.movie_id))
             result_list.append(PieBarStatisticsVo(name=key, tooltipText="", value=total_value, values=values))
         return result_list
