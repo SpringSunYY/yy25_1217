@@ -102,7 +102,7 @@ class MovieStatisticsMapper:
     def genres_rank_statistics(cls, request):
         """
         电影分类排行
-        select avg(rating) as value, directors as name
+        select sum(view_count) as value, directors as name
         from tb_movie
         where pub_date >= '2019-01-01'
           and pub_date <= '2019-12-31'

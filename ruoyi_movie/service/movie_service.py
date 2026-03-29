@@ -102,25 +102,27 @@ class MovieService:
     @staticmethod
     def _parse_pub_date(pub_date_str: str) -> tuple[str | None, int | None]:
         """
-        解析上映日期字符串，提取第一个日期和年份
+        解析上映日期字符串，提取最早的上映日期和年份
 
         Args:
             pub_date_str: 上映日期字符串，如 "2024-06-08(中国大陆)/2024-04-19(北京国际电影节)"
 
         Returns:
-            (第一个日期, 年份) 或 (None, None)
+            (最早的日期，最早年份) 或 (None, None)
         """
         if not pub_date_str:
             return None, None
 
-        # 使用正则表达式提取第一个日期
-        date_match = re.search(r'(\d{4}-\d{2}-\d{2})', pub_date_str)
-        if date_match:
-            first_date = date_match.group(1)
+        # 使用正则表达式提取所有日期
+        dates = re.findall(r'(\d{4}-\d{2}-\d{2})', pub_date_str)
+
+        if dates:
             try:
+                # 找到最早的日期（字符串比较即可，因为格式统一）
+                earliest_date = min(dates)
                 # 提取年份
-                year = int(first_date[:4])
-                return first_date, year
+                year = int(earliest_date[:4])
+                return earliest_date, year
             except ValueError:
                 pass
 
